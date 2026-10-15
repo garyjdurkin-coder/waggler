@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#ECF0EB" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0E1412" media="(prefers-color-scheme: dark)">
-<meta name="description" content="Bankside: a fishing log for UK anglers. Catches, photos, PBs, venues and weather.">
+<meta name="description" content="Waggler: a fishing log for UK anglers. Catches, photos, PBs, venues and weather.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<title>Bankside</title>
+<title>Waggler</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
@@ -19,7 +19,7 @@
    the only loud colour; everything else sits in reed and water greens. */
 :root{
   --bg:#ECF0EB; --surface:#FFFFFF; --sunk:#E1E8E2; --ink:#14201A; --muted:#55645C; --line:#CDD7CF;
-  --accent:#D4461A; --accent-ink:#FFFFFF; --water:#1D5852; --water-soft:#D3E5E0;
+  --accent:#C2410C; --accent-ink:#FFFFFF; --water:#1D5852; --water-soft:#D3E5E0;
   --good:#2E7A3D; --warn:#A86A12; --bad:#B42318; --shadow:0 1px 2px rgba(20,32,26,.06),0 6px 20px rgba(20,32,26,.07);
   --f-display:"Bricolage Grotesque","Figtree",system-ui,sans-serif;
   --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
@@ -51,6 +51,8 @@ button{cursor:pointer}
 .brand h1{font:700 26px/1 var(--f-display);letter-spacing:-.02em;margin:0}
 .brand .sub{font-size:12px;color:var(--muted);letter-spacing:.02em}
 .mark{width:34px;height:34px;flex:none}
+.brand h1{font-size:30px}
+.wl{display:inline-block;width:.36em;height:1.08em;vertical-align:-.22em;margin:0 -.01em 0 .01em}
 .top .btn{flex:none}
 
 /* buttons */
@@ -228,6 +230,12 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;
 .spref .hint a,.refhero figcaption a{color:inherit}
 .refhero{margin:0;width:100%;display:flex;flex-direction:column;gap:6px}
 .refhero img{width:100%;aspect-ratio:16/9;object-fit:contain;border-radius:var(--r);background:var(--water-soft);padding:8px;max-width:100%}
+.idbtn{display:block;border:0;padding:0;margin:0;background:none;cursor:pointer;border-radius:8px;flex:none;width:auto;max-width:100%}
+.refhero .idbtn{width:100%}
+.idbox{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.idbox p{margin:0}
+.idbox h4{margin:4px 0 0;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.idbox ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px}
 .refhero figcaption{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
 .thumb img.ref{object-fit:contain;padding:4px}
 .guide{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px}
@@ -276,8 +284,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;
   <header class="top wrap">
     <div class="top-row">
       <div class="brand">
-        <svg class="mark" viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="31" rx="17" ry="3.2" fill="none" stroke="var(--water)" stroke-width="1.4" opacity=".5"/><ellipse cx="20" cy="31" rx="9" ry="1.8" fill="none" stroke="var(--water)" stroke-width="1.4"/><path d="M18.3 31 L18.9 12 h2.2 L21.7 31 Z" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.4" stroke-linejoin="round"/><rect x="18.9" y="4" width="2.2" height="8.6" rx="1" fill="var(--accent)"/></svg>
-        <div><h1>Bankside</h1><div class="sub" id="subtitle">Fishing log</div></div>
+        <div><h1 aria-label="Waggler"><span aria-hidden="true">wagg<svg class="wl" viewBox="0 0 34 100" aria-hidden="true"><g transform="rotate(7 14 92)"><circle cx="14" cy="92" r="4" fill="none" stroke="var(--ink)" stroke-width="2.6"/><path d="M11.2 87.5 L16.8 87.5 L19 31 L9 31Z" fill="#C9A97A" stroke="var(--ink)" stroke-width="1.8" stroke-linejoin="round"/><rect x="9" y="4" width="10" height="26" rx="5" fill="var(--accent)" stroke="var(--ink)" stroke-width="1.6"/><rect x="9" y="26.5" width="10" height="5" fill="var(--ink)"/></g></svg>er</span></h1><div class="sub" id="subtitle">Fishing log</div></div>
       </div>
       <button class="btn small" id="install" hidden>Install app</button>
     </div>
@@ -293,16 +300,60 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;
 
 /* ------------------------------------------------------------------ data */
 const SPECIES = {
-  "Coarse": ["Roach","Rudd","Perch","Bream","Skimmer bream","Silver bream","Roach x bream hybrid","Common carp","Mirror carp","Leather carp","Ghost carp","F1 carp","Crucian carp","Grass carp","Tench","Chub","Dace","Barbel","Ide","Golden orfe","Gudgeon","Bleak","Ruffe","Eel","Minnow"],
+  "Coarse": ["Roach","Rudd","Perch","Bream","Skimmer bream","Silver bream","Common carp","Mirror carp","Leather carp","Ghost carp","F1 carp","Crucian carp","Grass carp","Tench","Chub","Dace","Barbel","Ide","Golden orfe","Gudgeon","Bleak","Ruffe","Eel","Minnow"],
   "Predator": ["Pike","Zander","Wels catfish"],
-  "Game": ["Brown trout","Rainbow trout","Grayling","Sea trout","Salmon"]
+  "Game": ["Brown trout","Rainbow trout","Grayling","Sea trout","Salmon"],
+  "Not sure": ["Unknown"]
 };
 const ALL_SPECIES = Object.values(SPECIES).flat();
+/* Entries that are not a species, so they stay off the checklist. */
+const NOT_LISTED = ["Unknown", "Roach x bream hybrid"];
+const CHECK_SPECIES = ALL_SPECIES.filter(sp => !NOT_LISTED.includes(sp));
 /* Reference photos of each species, from Wikimedia Commons. Each is Creative Commons or public domain; credits shown in the app. */
 const PHOTOS = Object.fromEntries(ALL_SPECIES.map(sp => [sp, { file: sp.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + ".svg" }]));
+/* Short description and identification features for each species, shown under its drawing. */
+const SPECIES_INFO = {
+  "Roach": { d: "One of the most widespread coarse fish in the UK, found in rivers, canals and lakes.", f: ["Red iris in the eye", "Front of the dorsal fin sits directly above the start of the pelvic fins", "Silver sides with a blue-green back", "Orange to red lower fins"] },
+  "Rudd": { d: "A golden cousin of the roach that likes still, weedy water and often feeds near the surface.", f: ["Brassy, golden sides", "Bright red fins", "Dorsal fin set further back than the pelvic fins", "Lower jaw juts up, giving an upturned mouth"] },
+  "Perch": { d: "A bold, striped predator found in most UK waters, from small ponds to big rivers.", f: ["Dark vertical bars down the sides", "Spiky first dorsal fin with a black spot at the back", "Orange to red pelvic and anal fins", "Two separate dorsal fins"] },
+  "Bream": { d: "A deep, slab-sided fish that shoals in big numbers and turns bronze as it grows.", f: ["Very deep, flat body", "Bronze to dark brown sides in adults", "Long anal fin", "Mouth extends into a tube when feeding", "Thick coat of slime"] },
+  "Skimmer bream": { d: "Anglers' name for a young common bream, usually under about 1lb.", f: ["Same shape as an adult bream", "Silvery rather than bronze", "Long anal fin", "Grey fins without red"] },
+  "Silver bream": { d: "A separate, smaller species of bream that is easily mistaken for a skimmer.", f: ["Large eye for the size of the head", "Red or orange at the base of the pectoral and pelvic fins", "Bright silver sides", "Less slimy than common bream"] },
+  "Common carp": { d: "A big, powerful fish brought to Britain centuries ago, and now a favourite target.", f: ["Fully covered in even, regular scales", "Four barbels: two at the corners of the mouth, two shorter on the top lip", "Long dorsal fin", "Bronze to golden colour"] },
+  "Mirror carp": { d: "A common carp variety with only a few scales.", f: ["Scattered large, shiny scales", "Bare patches of skin between the scales", "Four barbels", "Long dorsal fin"] },
+  "Leather carp": { d: "A carp variety with almost no scales at all.", f: ["Smooth, leathery skin", "No scales, or only a very few near the fins", "Four barbels", "Long dorsal fin"] },
+  "Ghost carp": { d: "A cross between a common or mirror carp and a koi, stocked in many fisheries.", f: ["Pale, white, grey or metallic colour", "Dark net-like pattern can show through the scales", "Four barbels", "Carp shape and long dorsal fin"] },
+  "F1 carp": { d: "A cross between a common carp and a crucian or goldfish, bred for commercial fisheries.", f: ["Carp-like body but smaller and rounder", "Barbels small or barely visible", "Bronze to golden colour", "Fights hard and feeds in cold water"] },
+  "Crucian carp": { d: "A small, deep-bodied carp that likes still, weedy ponds. True crucians are getting rare.", f: ["No barbels at all", "Rounded, outward-curving top edge to the dorsal fin", "Deep body with buttery bronze sides", "Young fish may have a dark spot at the base of the tail"] },
+  "Grass carp": { d: "A long, torpedo-shaped carp from Asia, stocked in some waters to eat weed.", f: ["Long, rounded body", "Eye set low on the head, level with the mouth", "Large scales with dark edges", "No barbels", "Short dorsal fin"] },
+  "Tench": { d: "A slimy, olive-green fish of still and slow waters, famous for early-morning bubbles.", f: ["Olive to dark green colour", "Small red eye", "Tiny scales under a thick slime", "Two small barbels at the corners of the mouth", "Rounded fins and a square tail"] },
+  "Chub": { d: "A chunky river fish with a big mouth that will eat almost anything.", f: ["Broad head and big white-lipped mouth", "Large scales with dark edges", "Anal fin has a rounded, outward-curving edge", "Red-tinged lower fins"] },
+  "Dace": { d: "A small, slim, fast river fish often found in shoals in quick water.", f: ["Slim body and narrow head", "Small mouth", "Anal fin has an inward-curving edge", "Yellowish eye and pale yellow fins", "Silver sides"] },
+  "Barbel": { d: "A powerful river fish built for hugging the bottom in strong current.", f: ["Four barbels around an underslung mouth", "Flat belly", "Bronze back and sides", "Tall, pointed dorsal fin", "Orange to red lower fins"] },
+  "Ide": { d: "A silvery fish similar to a chub, found in some rivers and stocked lakes.", f: ["Smaller head and mouth than a chub", "Silver to brassy sides", "Reddish lower fins", "Anal fin with a slightly inward-curving edge"] },
+  "Golden orfe": { d: "The golden, ornamental form of the ide, stocked in ponds and some fisheries.", f: ["Bright orange-gold colour", "Same shape as an ide", "Often swims and feeds near the surface", "Can have dark freckles on the back"] },
+  "Gudgeon": { d: "A small bottom-feeding fish of rivers and canals.", f: ["Two small barbels at the corners of the mouth", "Row of dark blotches along each side", "Spotted dorsal fin and tail", "Rounded body and flat belly"] },
+  "Bleak": { d: "A small, very silvery fish that shoals near the surface.", f: ["Slim body with bright silver sides", "Upturned mouth", "Long anal fin", "Scales come off easily"] },
+  "Ruffe": { d: "A small cousin of the perch, also known as the pope.", f: ["Single dorsal fin, spiky at the front and soft at the back", "No stripes, but fine dark spots", "Large eye", "Very slimy"] },
+  "Eel": { d: "A snake-shaped fish that is born in the Sargasso Sea and grows up in UK rivers and lakes. Now critically endangered.", f: ["Long, snake-like body", "One long fin running along the back, round the tail and under the belly", "Small pectoral fins", "Slimy skin"] },
+  "Minnow": { d: "A tiny shoaling fish of clean rivers and streams.", f: ["Very small, usually only a few inches", "Dark blotches along the sides", "Males have a red belly in spring", "Small rounded fins"] },
+  "Pike": { d: "Britain's top freshwater predator, built for ambush.", f: ["Long body with a flat, duck-bill shaped head", "Jaws full of sharp teeth", "Dorsal and anal fins set far back near the tail", "Green with pale bean-shaped spots"] },
+  "Zander": { d: "A European predator, sometimes called pikeperch, now living in many English rivers and canals.", f: ["Large, glassy eyes", "Two dorsal fins, the first spiky", "Long fangs at the front of the jaws", "Grey-green with faint dark bars", "Dark spots in rows on the dorsal fins"] },
+  "Wels catfish": { d: "A huge, scaleless predator stocked in some English lakes. It can grow far larger than any native fish.", f: ["Very wide, flat head", "Six barbels: two very long on the top jaw, four short under the chin", "Tiny dorsal fin", "Long anal fin running back to the tail", "No scales"] },
+  "Brown trout": { d: "Our native trout, found in clean, cool rivers, streams and lakes.", f: ["Small fatty adipose fin behind the dorsal fin", "Black and red spots, often with pale rings", "Brown to golden sides", "Square or slightly forked tail"] },
+  "Rainbow trout": { d: "A North American trout stocked in many UK fisheries.", f: ["Pink to purple stripe along the side", "Black spots covering the tail fin", "Adipose fin", "Silver to green back"] },
+  "Grayling": { d: "A fish of clean, fast rivers, nicknamed the lady of the stream.", f: ["Tall, sail-like dorsal fin", "Adipose fin", "Small mouth", "Teardrop-shaped pupil", "Silvery-grey with a scattering of dark spots"] },
+  "Sea trout": { d: "A brown trout that goes to sea to feed and comes back to rivers to spawn.", f: ["Bright silver when fresh from the sea", "Black spots, often X-shaped, mostly above the lateral line", "Upper jaw reaches past the back of the eye", "Thick tail root and square tail"] },
+  "Salmon": { d: "The Atlantic salmon, a sea-going fish that returns to its home river to spawn.", f: ["Narrow wrist in front of the tail", "Slightly forked tail", "Few or no spots below the lateral line", "Upper jaw reaches only to the back of the eye"] },
+  "Unknown": { d: "Use this when you can't be sure what you've caught. Hybrids are common in UK waters, and they mix features from both parents.", f: ["Roach x bream: deeper than a roach, with a longer anal fin than a roach but shorter than a bream", "Rudd x bream: bream-like body but with redder fins from the rudd parent", "Roach x rudd: hard to tell from either parent, with fin colour and mouth shape in between the two", "Carp x crucian: crucian shape but with small barbels. True crucians have none"] }
+};
+function idHtml(sp) {
+  const x = SPECIES_INFO[sp]; if (!x) return "";
+  return `<div class="idbox"><p>${esc(x.d)}</p><h4>${sp === "Unknown" ? "Common hybrids" : "How to tell"}</h4><ul>${x.f.map(t => `<li>${esc(t)}</li>`).join("")}</ul></div>`;
+}
 const spPhoto = sp => PHOTOS[sp] ? "fish/" + PHOTOS[sp].file : null;
 function creditLine(sp) {
-  return PHOTOS[sp] ? "Drawing made for Bankside" : "";
+  return PHOTOS[sp] ? "Drawing made for Waggler" : "";
 }
 const METHODS = ["Waggler","Stick float","Pole","Feeder","Method feeder","Pellet feeder","Ledger","Bomb","Hair rig","Zig rig","Surface","Free-lining","Lure","Deadbait","Livebait","Fly"];
 const BAITS = ["Maggot","Caster","Worm","Pellet","Sweetcorn","Bread","Boilie","Hemp","Luncheon meat","Paste","Groundbait","Prawn"];
@@ -470,7 +521,7 @@ const IDB = {
   db: null,
   open() {
     return new Promise((ok, no) => {
-      const r = indexedDB.open("bankside", 1);
+      const r = indexedDB.open("bankside", 1); // storage keeps its original name so existing catches carry over
       r.onupgradeneeded = () => { for (const s of ["catches", "sessions", "venues", "settings", "photos"]) if (!r.result.objectStoreNames.contains(s)) r.result.createObjectStore(s, { keyPath: "id" }); };
       r.onsuccess = () => { IDB.db = r.result; ok(); };
       r.onerror = () => no(r.error);
@@ -594,13 +645,13 @@ const WX_CREDIT = `Weather data by <a href="https://open-meteo.com/" target="_bl
 function blobToDataUrl(b) { return new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = () => no(r.error); r.readAsDataURL(b); }); }
 async function dataUrlToBlob(u) { return await (await fetch(u)).blob(); }
 async function makeBackup() {
-  const out = { app: "bankside", format: 1, exported: new Date().toISOString(), catches: await IDB.all("catches"), sessions: await IDB.all("sessions"), venues: await IDB.all("venues"), settings: await IDB.all("settings"), photos: {} };
+  const out = { app: "waggler", format: 1, exported: new Date().toISOString(), catches: await IDB.all("catches"), sessions: await IDB.all("sessions"), venues: await IDB.all("venues"), settings: await IDB.all("settings"), photos: {} };
   for (const p of await IDB.all("photos")) out.photos[p.id] = await blobToDataUrl(p.blob);
   return JSON.stringify(out);
 }
 async function restoreBackup(text) {
   const j = JSON.parse(text);
-  if (j.app !== "bankside") throw new Error("not a Bankside backup");
+  if (j.app !== "waggler" && j.app !== "bankside") throw new Error("not a Waggler backup");
   for (const s of ["catches", "sessions", "venues", "settings", "photos"]) await IDB.clear(s);
   for (const s of ["catches", "sessions", "venues", "settings"]) for (const row of j[s] || []) await IDB.put(s, row);
   for (const [id, u] of Object.entries(j.photos || {})) await IDB.put("photos", { id, blob: await dataUrlToBlob(u) });
@@ -635,8 +686,8 @@ function caughtMap() {
 }
 function checklistState() {
   const logged = caughtMap(), ticked = S.settings.ticked || {};
-  const others = Object.keys(logged).filter(sp => !ALL_SPECIES.includes(sp)).sort();
-  const all = [...ALL_SPECIES, ...others];
+  const others = Object.keys(logged).filter(sp => !ALL_SPECIES.includes(sp) && !NOT_LISTED.includes(sp)).sort();
+  const all = [...CHECK_SPECIES, ...others];
   const done = all.filter(sp => logged[sp] !== undefined || ticked[sp]);
   return { logged, ticked, all, others, done };
 }
@@ -671,8 +722,8 @@ function renderTabs() {
 
 function statusBlock() {
   if (S.status === "connecting") return `<div class="empty">${I.fishbig}<h3>Opening your log…</h3><p>Loading your catches from this phone.</p></div>`;
-  if (S.status === "broken") return `<div class="empty">${I.fishbig}<h3>Your log can't open</h3><p>This browser is blocking storage. Open Bankside in Chrome, not in a private tab.</p></div>`;
-  if (S.status === "none") return `<div class="empty">${I.fishbig}<h3>Sign in to use your log</h3><p>Open Bankside in Claude while you're signed in. Your catches are saved to your account, so they're the same on your phone and computer.</p></div>`;
+  if (S.status === "broken") return `<div class="empty">${I.fishbig}<h3>Your log can't open</h3><p>This browser is blocking storage. Open Waggler in Chrome, not in a private tab.</p></div>`;
+  if (S.status === "none") return `<div class="empty">${I.fishbig}<h3>Sign in to use your log</h3><p>Open Waggler in Claude while you're signed in. Your catches are saved to your account, so they're the same on your phone and computer.</p></div>`;
   if (S.status === "denied") return `<div class="empty">${I.fishbig}<h3>This log is private</h3><p>Only its owner can see and add catches.</p></div>`;
   return "";
 }
@@ -711,7 +762,7 @@ function viewCatches() {
   const yrSessions = S.sessions.filter(s => (s.date || "").startsWith(String(year)));
   const best = thisYear.reduce((a, c) => (c.weightOz || 0) > (a?.weightOz || 0) ? c : a, null);
   if (!S.catches.length) {
-    return h + `<div class="empty">${I.fishbig}<h3>No catches yet</h3><p>Take a photo of your fish, pick the species, add the weight. Bankside fills in the rest where it can.</p><button class="btn primary" data-act="new-catch">${I.plus} Log your first catch</button></div>`;
+    return h + `<div class="empty">${I.fishbig}<h3>No catches yet</h3><p>Take a photo of your fish, pick the species, add the weight. Waggler fills in the rest where it can.</p><button class="btn primary" data-act="new-catch">${I.plus} Log your first catch</button></div>`;
   }
   h += `<div class="season" aria-label="${year} so far"><div><b>${thisYear.length}</b><span>Fish in ${year}</span></div><div><b>${yrSessions.length}</b><span>Sessions</span></div><div><b>${best ? esc(fmtWeight(best.weightOz)) || "–" : "–"}</b><span>${best ? "Best: " + esc(best.species) : "Best fish"}</span></div></div>`;
   const species = [...new Set(S.catches.map(c => c.species))].sort();
@@ -744,7 +795,7 @@ function viewSessions() {
   if (S.status !== "ready") return statusBlock();
   let h = topBanners();
   h += `<div class="section-h"><h2>Sessions</h2><button class="btn small" data-act="new-session">${I.plus} New session</button></div>`;
-  if (!S.sessions.length) return h + `<div class="empty">${I.fishbig}<h3>No sessions yet</h3><p>A session is one trip: a date and a venue. Bankside makes one for you when you log a catch, or you can start one before you cast.</p></div>`;
+  if (!S.sessions.length) return h + `<div class="empty">${I.fishbig}<h3>No sessions yet</h3><p>A session is one trip: a date and a venue. Waggler makes one for you when you log a catch, or you can start one before you cast.</p></div>`;
   const list = [...S.sessions].sort((a, b) => (b.date || "").localeCompare(a.date || "") || (b.start || "").localeCompare(a.start || ""));
   let lastM = ""; h += `<div class="list">`;
   for (const s of list) {
@@ -763,7 +814,7 @@ function viewVenues() {
   if (S.status !== "ready") return statusBlock();
   let h = topBanners();
   h += `<div class="section-h"><h2>Venues</h2><button class="btn small" data-act="new-venue">${I.plus} Add venue</button></div>`;
-  if (!S.venues.length) return h + `<div class="empty">${I.fishbig}<h3>No venues yet</h3><p>Add the waters you fish, with their location. Bankside then picks the right venue when a photo carries a location.</p></div>`;
+  if (!S.venues.length) return h + `<div class="empty">${I.fishbig}<h3>No venues yet</h3><p>Add the waters you fish, with their location. Waggler then picks the right venue when a photo carries a location.</p></div>`;
   h += `<div class="list">`;
   for (const v of [...S.venues].sort((a, b) => a.name.localeCompare(b.name))) {
     const cs = S.catches.filter(c => c.venueId === v.id), ss = S.sessions.filter(s => s.venueId === v.id);
@@ -782,7 +833,7 @@ function viewRecords() {
   { const st = checklistState(); const pct = Math.round(st.done.length / st.all.length * 100);
     h += `<button class="panel cl-sum" data-act="checklist"><div class="section-h"><h3 style="margin:0">Species checklist</h3><span class="num">${st.done.length} / ${st.all.length}</span></div>
       <div class="meter" role="img" aria-label="${st.done.length} of ${st.all.length} species caught"><i style="width:${pct}%"></i></div>
-      <span class="hint">${st.done.length ? "Tap to see what's left and tick off species you caught before using Bankside." : "Tick off every species you've ever caught."}</span></button>`; }
+      <span class="hint">${st.done.length ? "Tap to see what's left and tick off species you caught before using Waggler." : "Tick off every species you've ever caught."}</span></button>`; }
   const pbs = Object.values(pbMap()).sort((a, b) => b.weightOz - a.weightOz);
   h += `<div class="panel"><h3>Personal bests</h3>`;
   if (!pbs.length) h += `<p class="muted" style="margin:0">Your heaviest fish of each species appear here once you log weights.</p>`;
@@ -820,14 +871,14 @@ function viewRecords() {
     ALL_SPECIES.map(sp => { const n = S.catches.filter(c => c.species === sp).length; const src = spPhoto(sp);
       return `<button class="gtile" data-guide="${esc(sp)}">${src ? `<img src="${esc(src)}" alt="" loading="lazy">` : `<span class="gnone">${I.fish}</span>`}<b>${esc(sp)}</b><span>${n ? n + " logged" : (S.settings.ticked || {})[sp] ? "Caught before" : "Not yet"}</span></button>`; }).join("") + `</div></div>`;
   h += `<div class="panel"><h3>Licences & tickets</h3>` +
-    (lic.length ? `<table class="table"><tbody>${lic.map(l => `<tr><td>${esc(l.name)}</td><td class="r">${l.expires ? "Runs out " + esc(fmtShort(l.expires)) + " " + esc(l.expires.slice(0,4)) : "No date"}</td></tr>`).join("")}</tbody></table>` : `<p class="muted" style="margin:0 0 10px">Add your rod licence and club books. Bankside warns you 30 days before they run out.</p>`) +
+    (lic.length ? `<table class="table"><tbody>${lic.map(l => `<tr><td>${esc(l.name)}</td><td class="r">${l.expires ? "Runs out " + esc(fmtShort(l.expires)) + " " + esc(l.expires.slice(0,4)) : "No date"}</td></tr>`).join("")}</tbody></table>` : `<p class="muted" style="margin:0 0 10px">Add your rod licence and club books. Waggler warns you 30 days before they run out.</p>`) +
     `<div class="actions" style="margin-top:10px"><button class="btn small" data-act="licences">${I.edit} Edit</button></div></div>`;
   h += `<div class="panel"><h3>Settings</h3><div class="actions">
     <div class="chips" role="group" aria-label="Weight units"><button class="chip" data-units="lboz" aria-pressed="${S.settings.units !== "kg"}">lb & oz</button><button class="chip" data-units="kg" aria-pressed="${S.settings.units === "kg"}">kg</button></div>
     <button class="btn small" data-act="export">${I.dl} Export catches (CSV)</button></div></div>`;
   h += `<div class="panel"><h3>Backup</h3><p class="hint" style="margin:0 0 10px">Your log is stored on this phone only. A backup file holds every catch and photo. Keep a copy in Google Drive or email it to yourself.${S.settings.lastBackup ? " Last backup: " + esc(fmtDate(S.settings.lastBackup)) + "." : ""}</p>
     <div class="actions"><button class="btn small primary" data-act="backup">${I.dl} Back up now</button><button class="btn small" data-act="restore">Restore from a backup</button><input type="file" id="restore-file" accept=".json,application/json" class="sr" tabindex="-1" aria-hidden="true"></div>
-    <p class="hint" style="margin:10px 0 0">Bankside ${"1.1.0"} · runs on your phone · ${WX_CREDIT}</p></div>`;
+    <p class="hint" style="margin:10px 0 0">Waggler ${"1.2.0"} · runs on your phone · ${WX_CREDIT}</p></div>`;
   return h;
 }
 
@@ -931,7 +982,7 @@ function openCatchForm(existing) {
       <div class="phbtns" id="f-phbtns"><button type="button" class="btn" id="f-cam">${I.camera} Take photo</button><button type="button" class="btn" id="f-lib">${I.image} Choose photo</button></div>
       <input type="file" accept="image/*" capture="environment" id="f-file-cam" class="sr" tabindex="-1" aria-hidden="true">
       <input type="file" accept="image/*" multiple id="f-file-lib" class="sr" tabindex="-1" aria-hidden="true">
-      <p class="hint" style="margin:0">If your phone saves location in photos, Bankside reads where and when the fish was caught from the first photo.</p>
+      <p class="hint" style="margin:0">If your phone saves location in photos, Waggler reads where and when the fish was caught from the first photo.</p>
     </fieldset>
     <fieldset><legend>Fish</legend>
       ${recent.length ? `<div class="chips" id="f-recent" aria-label="Recent species">${recent.map(s => `<button type="button" class="chip" data-sp="${esc(s)}">${esc(s)}</button>`).join("")}</div>` : ""}
@@ -1019,7 +1070,7 @@ function openCatchForm(existing) {
         const near = nearestVenue(g.lat, g.lon);
         if (near && near.d < 2 && (!venueSel.value || venueSel.value === "__new")) { venueSel.value = near.v.id; onVenue(); }
         drawLoc();
-      } catch (er) { toast(er && er.code === 1 ? "Location is blocked. Allow it for Bankside in Chrome's site settings." : "Couldn't get your location. Try again outside, away from trees."); }
+      } catch (er) { toast(er && er.code === 1 ? "Location is blocked. Allow it for Waggler in Chrome's site settings." : "Couldn't get your location. Try again outside, away from trees."); }
       finally { b.disabled = false; b.innerHTML = `${I.pin} Use my location`; }
     });
     // open the camera or library straight from the tap, so phones treat it as the user's own action
@@ -1054,7 +1105,7 @@ function openCatchForm(existing) {
     const drawRef = () => {
       const sp = speciesSel.value, box = $("#f-spref", el), src = spPhoto(sp);
       box.hidden = !src;
-      if (src) box.innerHTML = `<img src="${esc(src)}" alt="A ${esc(sp.toLowerCase())}"><div><b>${esc(sp)}</b><span class="hint">Check your fish against the drawing</span></div>`;
+      if (src) box.innerHTML = `<button type="button" class="idbtn" data-idsp="${esc(sp)}" aria-label="ID tips for ${esc(sp.toLowerCase())}"><img src="${esc(src)}" alt="A ${esc(sp.toLowerCase())}"></button><div><b>${esc(sp)}</b><span class="hint">Tap the drawing for ID tips</span></div>`;
     };
     speciesSel.addEventListener("change", () => { $("#f-other-w", el).hidden = speciesSel.value !== "__other"; drawRef(); });
     drawRef();
@@ -1196,7 +1247,7 @@ function catchDetailHtml(c) {
   const sun = d && lat != null ? sunTimes(d, lat, lon) : null; const moon = d ? moonPhase(d) : null;
   const cond = c.cond || {}; const sky = SKY.find(s => s[0] === cond.sky);
   const f = (k, v, full) => v ? `<div class="${full ? "full" : ""}"><dt>${k}</dt><dd>${v}</dd></div>` : "";
-  return `<div class="hero">${(c.photos || []).length ? c.photos.map((id, i) => `<img src="${esc(photoUrl(id))}" alt="${esc(c.species)}, photo ${i + 1}">`).join("") : spPhoto(c.species) ? `<figure class="refhero"><img src="${esc(spPhoto(c.species))}" alt="A ${esc(c.species.toLowerCase())}"><figcaption>No photo of this catch yet. Add one with Edit.</figcaption></figure>` : `<div class="ph-empty">${I.fishbig}</div>`}</div>
+  return `<div class="hero">${(c.photos || []).length ? c.photos.map((id, i) => `<img src="${esc(photoUrl(id))}" alt="${esc(c.species)}, photo ${i + 1}">`).join("") : spPhoto(c.species) ? `<figure class="refhero"><button type="button" class="idbtn" data-idsp="${esc(c.species)}" aria-label="ID tips for ${esc(c.species.toLowerCase())}"><img src="${esc(spPhoto(c.species))}" alt="A ${esc(c.species.toLowerCase())}"></button><figcaption>No photo of this catch yet. Add one with Edit. Tap the drawing for ID tips.</figcaption></figure>` : `<div class="ph-empty">${I.fishbig}</div>`}</div>
     <div class="big-title"><h3>${esc(c.species)}</h3><span class="num">${esc(fmtWeight(c.weightOz)) || "Not weighed"}</span></div>
     <div class="badges" style="margin-top:-10px">${isPb ? '<span class="badge pb">Personal best</span>' : ""}${c.example ? '<span class="badge ex">Example</span>' : ""}${c.released === false ? '<span class="badge">Retained</span>' : '<span class="badge">Returned</span>'}</div>
     <dl class="facts" style="margin:0">
@@ -1258,7 +1309,7 @@ async function drawCatchCard(c) {
   const X = 72;
   // float mark + brand
   g.fillStyle = "#FF6B35"; g.fillRect(X, 64, 10, 40); g.fillStyle = "#fff"; g.beginPath(); g.moveTo(X - 2, 150); g.lineTo(X + 1, 104); g.lineTo(X + 9, 104); g.lineTo(X + 12, 150); g.closePath(); g.fill();
-  g.font = '600 34px "Figtree", system-ui, sans-serif'; g.fillStyle = "rgba(255,255,255,.92)"; g.textBaseline = "alphabetic"; g.fillText("Bankside", X + 34, 118);
+  g.font = '600 34px "Figtree", system-ui, sans-serif'; g.fillStyle = "rgba(255,255,255,.92)"; g.textBaseline = "alphabetic"; g.fillText("Waggler", X + 34, 118);
   const pbs = pbMap(); const isPb = pbs[c.species] && pbs[c.species].id === c.id;
   if (isPb) { g.font = '700 30px "Figtree", sans-serif'; const t = "PERSONAL BEST", tw = g.measureText(t).width + 44; g.fillStyle = "#FF6B35"; roundRect(g, W - X - tw, 74, tw, 56, 28); g.fill(); g.fillStyle = "#1A0D07"; g.fillText(t, W - X - tw + 22, 113); }
   // text block from the bottom up
@@ -1406,7 +1457,7 @@ function openVenueForm(existing) {
   const body = `<fieldset><legend>Venue</legend>
       <div class="field"><label for="v-name">Name</label><input id="v-name" type="text" value="${esc(v.name || "")}" placeholder="Lake, pond, stretch of river"></div>
       <div class="field"><label for="v-club">Club, ticket or day-ticket price</label><input id="v-club" type="text" value="${esc(v.club || "")}"></div>
-      <div class="field"><label for="v-coords">Location</label><input id="v-coords" type="text" value="${v.lat != null ? v.lat.toFixed(5) + ", " + v.lon.toFixed(5) : ""}" placeholder="53.6818, -1.4986 or a Google Maps link"><button type="button" class="btn small" id="v-gps" style="margin-top:6px;align-self:flex-start">${I.pin} Use my location</button><span class="hint">Stand at the venue and tap Use my location, or paste numbers from Google Maps. Bankside uses this to match catches to the venue.</span></div>
+      <div class="field"><label for="v-coords">Location</label><input id="v-coords" type="text" value="${v.lat != null ? v.lat.toFixed(5) + ", " + v.lon.toFixed(5) : ""}" placeholder="53.6818, -1.4986 or a Google Maps link"><button type="button" class="btn small" id="v-gps" style="margin-top:6px;align-self:flex-start">${I.pin} Use my location</button><span class="hint">Stand at the venue and tap Use my location, or paste numbers from Google Maps. Waggler uses this to match catches to the venue.</span></div>
       <div class="field"><label for="v-notes">Notes</label><textarea id="v-notes" placeholder="Depths, snags, best pegs, parking, rules">${esc(v.notes || "")}</textarea></div>
     </fieldset>`;
   const foot = `${existing ? `<button class="btn danger" id="v-del">Delete</button>` : ""}<span class="grow"></span><button class="btn ghost" data-close>Cancel</button><button class="btn primary" id="v-save">Save venue</button>`;
@@ -1441,10 +1492,15 @@ function speciesHtml(sp) {
   const baits = countBy(cs, "bait").slice(0, 3).map(x => x[0]).join(", ");
   const vens = countBy(cs, c => venueName(c)).slice(0, 3).map(x => x[0]).join(", ");
   const f = (k, v) => v ? `<div><dt>${k}</dt><dd>${v}</dd></div>` : "";
-  return `${src ? `<figure class="refhero"><img src="${esc(src)}" alt="A ${esc(sp.toLowerCase())}"></figure>` : `<div class="hero"><div class="ph-empty">${I.fishbig}</div></div><p class="hint" style="margin:0">No openly licensed photo of a ${esc(sp.toLowerCase())} was available.</p>`}
+  return `${src ? `<figure class="refhero"><img src="${esc(src)}" alt="A ${esc(sp.toLowerCase())}"></figure>` : `<div class="hero"><div class="ph-empty">${I.fishbig}</div></div>`}
     <div class="big-title"><h3>${esc(sp)}</h3><span class="num">${cs.length} caught</span></div>
+    ${idHtml(sp)}
     ${cs.length ? `<dl class="facts" style="margin:0">${f("Personal best", pb ? `<span class="num">${esc(fmtWeight(pb.weightOz))}</span>` : "")}${f("Last caught", esc(fmtDate([...cs].sort((a, b) => (b.when || "").localeCompare(a.when || ""))[0].when)))}${f("Best baits", esc(baits))}${f("Where", esc(vens))}</dl>
-      <div class="list">${cs.slice(0, 10).map(c => catchCard(c, pbMap())).join("")}</div>` : `<p class="muted" style="margin:0">You haven't logged a ${esc(sp.toLowerCase())} yet.</p>`}`;
+      <div class="list">${cs.slice(0, 10).map(c => catchCard(c, pbMap())).join("")}</div>` : `<p class="muted" style="margin:0">You haven't logged ${sp === "Unknown" ? "an unknown fish" : "a " + esc(sp.toLowerCase())} yet.</p>`}`;
+}
+function openSpeciesId(sp) {
+  const src = spPhoto(sp);
+  openSheet({ title: sp, body: `${src ? `<figure class="refhero"><img src="${esc(src)}" alt="A ${esc(sp.toLowerCase())}"></figure>` : ""}${idHtml(sp) || `<p class="muted" style="margin:0">No ID notes for this one yet.</p>`}` });
 }
 function openSpecies(sp) {
   const entry = openSheet({ title: sp, body: speciesHtml(sp), refresh() { setBody(entry, speciesHtml(sp)); } });
@@ -1453,19 +1509,19 @@ function checklistHtml() {
   const st = checklistState();
   const row = sp => {
     const logged = st.logged[sp] !== undefined, ticked = !!st.ticked[sp], src = spPhoto(sp), id = "cl-" + sp.replace(/[^A-Za-z0-9]/g, "");
-    const note = logged ? `Logged${st.logged[sp] ? " · first " + esc(fmtShort(st.logged[sp])) + " " + esc(st.logged[sp].slice(0, 4)) : ""}` : ticked ? "Caught before Bankside" : "Not caught yet";
+    const note = logged ? `Logged${st.logged[sp] ? " · first " + esc(fmtShort(st.logged[sp])) + " " + esc(st.logged[sp].slice(0, 4)) : ""}` : ticked ? "Caught before Waggler" : "Not caught yet";
     return `<label class="cl-row ${logged || ticked ? "on" : ""}" for="${id}">
       <input type="checkbox" id="${id}" data-tick="${esc(sp)}" ${logged || ticked ? "checked" : ""} ${logged ? "disabled" : ""}>
-      ${src ? `<img src="${esc(src)}" alt="" loading="lazy">` : `<span class="cl-none">${I.fish}</span>`}
+      ${src ? `<button type="button" class="idbtn" data-idsp="${esc(sp)}" aria-label="ID tips for ${esc(sp.toLowerCase())}"><img src="${esc(src)}" alt="" loading="lazy"></button>` : `<span class="cl-none">${I.fish}</span>`}
       <span class="cl-txt"><b>${esc(sp)}</b><span>${note}</span></span></label>`;
   };
-  const groups = Object.entries(SPECIES).map(([g, list]) => {
+  const groups = Object.entries(SPECIES).filter(([g]) => g !== "Not sure").map(([g, list]) => {
     const n = list.filter(sp => st.done.includes(sp)).length;
     return `<section class="cl-group"><div class="section-h"><h2>${g}</h2><span class="num muted">${n} / ${list.length}</span></div><div class="cl-list">${list.map(row).join("")}</div></section>`;
   }).join("");
   const other = st.others.length ? `<section class="cl-group"><div class="section-h"><h2>Other species</h2><span class="num muted">${st.others.length}</span></div><div class="cl-list">${st.others.map(row).join("")}</div></section>` : "";
   return `<div class="cl-head"><b class="num">${st.done.length}<span> / ${st.all.length}</span></b><span>species caught</span><div class="meter"><i style="width:${Math.round(st.done.length / st.all.length * 100)}%"></i></div></div>
-    <p class="hint" style="margin:0">Species you log are ticked for you. Tick any others you've caught before you started using Bankside.</p>
+    <p class="hint" style="margin:0">Species you log are ticked for you. Tick any others you've caught before you started using Waggler.</p>
     <div class="chips" role="group" aria-label="Show"><button class="chip" data-clf="all" aria-pressed="${clFilter === "all"}">All</button><button class="chip" data-clf="todo" aria-pressed="${clFilter === "todo"}">Still to catch</button><button class="chip" data-clf="done" aria-pressed="${clFilter === "done"}">Caught</button></div>
     <div class="cl-body" data-show="${clFilter}">${groups}${other}</div>`;
 }
@@ -1482,14 +1538,14 @@ function openChecklist() {
   }, refresh() { const y = $(".sheet-body", entry.el).scrollTop; setBody(entry, checklistHtml()); $(".sheet-body", entry.el).scrollTop = y; } });
 }
 function openCredits() {
-  openSheet({ title: "Credits", body: `<p class="hint" style="margin:0">The species drawings were made for Bankside from each fish's identification features: body shape, fin colours, markings and barbels. ${WX_CREDIT}.</p>` });
+  openSheet({ title: "Credits", body: `<p class="hint" style="margin:0">The species drawings and ID notes were made for Waggler from each fish's standard identification features: body shape, fin colours, markings and barbels. ${WX_CREDIT}.</p>` });
 }
 
 /* -------------------------------------------------------------- licences */
 function openLicences() {
   const rows = (S.settings.licences || []).length ? S.settings.licences : [{ name: "EA rod licence", expires: "" }, { name: "Club book", expires: "" }];
   const row = (l, i) => `<div class="grid2" data-lic="${i}"><div class="field"><label for="l-n${i}">Name</label><input id="l-n${i}" type="text" value="${esc(l.name)}"></div><div class="field"><label for="l-d${i}">Runs out</label><input id="l-d${i}" type="date" value="${esc(l.expires || "")}"></div></div>`;
-  openSheet({ title: "Licences & tickets", body: `<p class="hint" style="margin:0">Bankside shows a reminder on the Catches page 30 days before each one runs out. An EA rod licence lasts 12 months from the day it starts.</p><div id="lic-rows" style="display:flex;flex-direction:column;gap:12px">${rows.map(row).join("")}</div><button class="btn small" id="lic-add" type="button">${I.plus} Add another</button>`,
+  openSheet({ title: "Licences & tickets", body: `<p class="hint" style="margin:0">Waggler shows a reminder on the Catches page 30 days before each one runs out. An EA rod licence lasts 12 months from the day it starts.</p><div id="lic-rows" style="display:flex;flex-direction:column;gap:12px">${rows.map(row).join("")}</div><button class="btn small" id="lic-add" type="button">${I.plus} Add another</button>`,
     foot: `<span class="grow"></span><button class="btn ghost" data-close>Cancel</button><button class="btn primary" id="lic-save">Save</button>`,
     onMount(el, entry) {
       let n = rows.length;
@@ -1509,7 +1565,7 @@ async function exportCsv() {
     const oz = c.weightOz || 0, cd = c.cond || {};
     return [(c.when || "").slice(0, 10), fmtTime(c.when), c.species, oz ? Math.floor(oz / 16) : "", oz ? Math.round((oz % 16) * 10) / 10 : "", oz ? (oz * 0.028349523).toFixed(3) : "", c.lengthCm ?? "", venueName(c), c.peg, c.method, c.bait, c.rig, (SKY.find(s => s[0] === cd.sky) || [])[1], cd.wind, cd.windDir, cd.airC, cd.waterC, cd.clarity, cd.level, cd.pressure, cd.trend, c.released === false ? "no" : "yes", c.lat, c.lon, c.notes].map(q).join(",");
   });
-  try { const r = await S.downloads.save({ filename: `bankside-catches-${nowLocal().slice(0, 10)}.csv`, data: [cols.join(","), ...rows].join("\n") }); if (r.status === "saved") toast("Exported"); }
+  try { const r = await S.downloads.save({ filename: `waggler-catches-${nowLocal().slice(0, 10)}.csv`, data: [cols.join(","), ...rows].join("\n") }); if (r.status === "saved") toast("Exported"); }
   catch (e) { if (e.code !== "declined") toast("Export isn't available here."); }
 }
 
@@ -1528,7 +1584,7 @@ async function doBackup(btn) {
   if (btn) btn.disabled = true;
   try {
     const text = await makeBackup();
-    await S.downloads.save({ filename: `bankside-backup-${nowLocal().slice(0, 10)}.json`, data: text });
+    await S.downloads.save({ filename: `waggler-backup-${nowLocal().slice(0, 10)}.json`, data: text });
     await saveSettings({ lastBackup: nowLocal().slice(0, 10) });
     toast("Backup saved to Downloads");
   } catch (e) { toast("The backup didn't save. Try again."); }
@@ -1537,7 +1593,7 @@ async function doBackup(btn) {
 document.addEventListener("change", async e => {
   if (e.target.id !== "restore-file" || !e.target.files[0]) return;
   const file = e.target.files[0];
-  let text; try { text = await file.text(); const j = JSON.parse(text); if (j.app !== "bankside") throw 0; } catch (er) { toast("That file isn't a Bankside backup."); return; }
+  let text; try { text = await file.text(); const j = JSON.parse(text); if (j.app !== "waggler" && j.app !== "bankside") throw 0; } catch (er) { toast("That file isn't a Waggler backup."); return; }
   const j = JSON.parse(text);
   openSheet({ title: "Restore backup", body: `<p style="margin:0">This backup from <b>${esc(fmtDate((j.exported || "").slice(0, 10)) || "an unknown date")}</b> has ${(j.catches || []).length} catch${(j.catches || []).length === 1 ? "" : "es"} and ${Object.keys(j.photos || {}).length} photo${Object.keys(j.photos || {}).length === 1 ? "" : "s"}.</p><p class="hint" style="margin:0">Restoring replaces everything on this phone with the backup.</p>`,
     foot: `<span class="grow"></span><button class="btn ghost" data-close>Cancel</button><button class="btn danger" id="rs-go">Replace and restore</button>`,
@@ -1552,6 +1608,7 @@ document.addEventListener("click", e => {
   const oc = t.closest("[data-open-catch]"); if (oc) { e.preventDefault(); openCatch(oc.dataset.openCatch); return; }
   const os = t.closest("[data-open-session]"); if (os) { e.preventDefault(); openSession(os.dataset.openSession); return; }
   const ov = t.closest("[data-open-venue]"); if (ov) { e.preventDefault(); openVenue(ov.dataset.openVenue); return; }
+  const ids = t.closest("[data-idsp]"); if (ids) { e.preventDefault(); e.stopPropagation(); openSpeciesId(ids.dataset.idsp); return; }
   const gd = t.closest("[data-guide]"); if (gd) { openSpecies(gd.dataset.guide); return; }
   const fl = t.closest("[data-filter]"); if (fl) { S.filter = fl.dataset.filter || null; render(); return; }
   const un = t.closest("[data-units]"); if (un && S.db) { const units = un.dataset.units; S.settings.units = units; render(); write(() => S.db.doc("settings/main").set({ ...S.settings, units })).catch(er => toast(dbErr(er))); return; }

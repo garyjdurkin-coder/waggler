@@ -1,6 +1,6 @@
 {
- "name": "Bankside",
- "short_name": "Bankside",
+ "name": "Waggler",
+ "short_name": "Waggler",
  "description": "Fishing log for UK anglers",
  "start_url": "./",
  "scope": "./",
