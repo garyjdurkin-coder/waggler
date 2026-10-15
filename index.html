@@ -1,0 +1,1595 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ECF0EB" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1412" media="(prefers-color-scheme: dark)">
+<meta name="description" content="Bankside: a fishing log for UK anglers. Catches, photos, PBs, venues and weather.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Bankside</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: one-column phone app. Sticky header, fixed tab bar at the bottom,
+   forms and detail views slide up as full-height sheets. Float-tip orange is
+   the only loud colour; everything else sits in reed and water greens. */
+:root{
+  --bg:#ECF0EB; --surface:#FFFFFF; --sunk:#E1E8E2; --ink:#14201A; --muted:#55645C; --line:#CDD7CF;
+  --accent:#D4461A; --accent-ink:#FFFFFF; --water:#1D5852; --water-soft:#D3E5E0;
+  --good:#2E7A3D; --warn:#A86A12; --bad:#B42318; --shadow:0 1px 2px rgba(20,32,26,.06),0 6px 20px rgba(20,32,26,.07);
+  --f-display:"Bricolage Grotesque","Figtree",system-ui,sans-serif;
+  --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-data:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1412; --surface:#17201C; --sunk:#111915; --ink:#E5ECE7; --muted:#93A39A; --line:#2A3631;
+  --accent:#FF6B35; --accent-ink:#1A0D07; --water:#6CC0B4; --water-soft:#1C3330;
+  --good:#6BCB7E; --warn:#E3A847; --bad:#FF8A7A; --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1412; --surface:#17201C; --sunk:#111915; --ink:#E5ECE7; --muted:#93A39A; --line:#2A3631;
+  --accent:#FF6B35; --accent-ink:#1A0D07; --water:#6CC0B4; --water-soft:#1C3330;
+  --good:#6BCB7E; --warn:#E3A847; --bad:#FF8A7A; --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--f-body);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{max-width:620px;margin:0 auto;min-height:100%;padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:14px 10px}
+.top-row{display:flex;align-items:center;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+.brand h1{font:700 26px/1 var(--f-display);letter-spacing:-.02em;margin:0}
+.brand .sub{font-size:12px;color:var(--muted);letter-spacing:.02em}
+.mark{width:34px;height:34px;flex:none}
+.top .btn{flex:none}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:10px 16px;min-height:44px;font-weight:600;font-size:14px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent}
+.btn.small{min-height:36px;padding:6px 12px;font-size:13px}
+.btn.danger{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 40%,var(--line))}
+.btn.armed{background:var(--bad);border-color:var(--bad);color:#fff}
+.btn:disabled{opacity:.55;cursor:default}
+.btn svg{width:18px;height:18px}
+a.btn{text-decoration:none;color:inherit}
+.iconbtn{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);display:inline-grid;place-items:center}
+.iconbtn svg{width:20px;height:20px}
+
+/* bottom tabs */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:color-mix(in srgb,var(--surface) 94%,transparent);backdrop-filter:blur(10px);border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.tabs-in{max-width:620px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);align-items:end}
+.tab{background:none;border:0;padding:8px 2px 10px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;font-weight:600;color:var(--muted);min-height:58px}
+.tab svg{width:23px;height:23px}
+.tab[aria-current="page"]{color:var(--ink)}
+.tab[aria-current="page"] svg{color:var(--accent)}
+.tab.add{color:var(--ink)}
+.tab.add .plus{width:50px;height:50px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;margin-top:-22px;box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 40%,transparent)}
+.tab.add .plus svg{width:26px;height:26px}
+
+/* content */
+main{display:flex;flex-direction:column;gap:18px;padding-block:6px 20px}
+.section-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.section-h h2{font:700 19px/1.2 var(--f-display);margin:0;letter-spacing:-.01em}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+.num{font-family:var(--f-data);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+
+.banner{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:12px 14px;border-radius:var(--r);background:var(--water-soft);color:var(--ink);font-size:14px}
+.banner.warn{background:color-mix(in srgb,var(--warn) 16%,var(--surface))}
+.banner.bad{background:color-mix(in srgb,var(--bad) 14%,var(--surface))}
+.banner p{margin:0;min-width:0;flex:1 1 220px}
+
+.season{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border-radius:var(--r);overflow:hidden;border:1px solid var(--line)}
+.season div{background:var(--surface);padding:12px 12px 10px;min-width:0}
+.season b{display:block;font:600 17px/1.2 var(--f-data);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.season span{font-size:12px;color:var(--muted)}
+
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;margin-inline:-2px;padding-inline:2px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 12px;font-size:13px;font-weight:600;min-height:36px;display:inline-flex;align-items:center;gap:6px}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.chip svg{width:16px;height:16px}
+.chips.wrap{flex-wrap:wrap;overflow:visible}
+
+.month-h{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:6px 2px -6px}
+.list{display:flex;flex-direction:column;gap:10px}
+.card{display:flex;gap:12px;align-items:stretch;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px;text-align:left;width:100%;min-width:0}
+.card:active{transform:scale(.995)}
+.thumb{width:84px;height:84px;flex:none;border-radius:10px;background:var(--water-soft);overflow:hidden;display:grid;place-items:center;color:var(--water)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb svg{width:44px;height:44px;opacity:.8}
+.card-body{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px;justify-content:center}
+.card-title{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.card-title strong{font:700 17px/1.2 var(--f-display);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-title .num{font-size:15px;font-weight:600;flex:none}
+.meta{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badges{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}
+.badge{font-size:11px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:6px;background:var(--sunk);color:var(--muted)}
+.badge.pb{background:var(--accent);color:var(--accent-ink)}
+.badge.ex{background:var(--water-soft);color:var(--water)}
+
+.row-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;gap:14px;text-align:left;width:100%}
+.datebox{width:52px;flex:none;text-align:center;border-right:1px solid var(--line);padding-right:12px}
+.datebox b{display:block;font:700 24px/1 var(--f-display)}
+.datebox span{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.row-main{min-width:0;flex:1}
+.row-main strong{display:block;font-weight:700;font-size:15.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row-side{text-align:right;flex:none}
+.row-side b{display:block;font:600 15px var(--f-data)}
+.row-side span{font-size:12px;color:var(--muted)}
+.cond-icons{display:inline-flex;gap:6px;align-items:center;color:var(--muted);font-size:13px}
+.cond-icons svg{width:16px;height:16px}
+
+.empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:34px 16px;border:1px dashed var(--line);border-radius:var(--r);background:var(--surface)}
+.empty svg.big{width:120px;height:70px;color:var(--water)}
+.empty h3{font:700 19px var(--f-display);margin:0}
+.empty p{margin:0;max-width:34ch;color:var(--muted)}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.panel h3{font:700 16px var(--f-display);margin:0 0 10px}
+.table{width:100%;border-collapse:collapse;font-size:14px}
+.table td,.table th{padding:9px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+.table th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.table tr:last-child td{border-bottom:0}
+.table td.r,.table th.r{text-align:right;white-space:nowrap}
+.table tr[data-open]{cursor:pointer}
+.scrollx{overflow-x:auto}
+
+.bars{display:flex;align-items:flex-end;gap:4px;height:120px;padding-top:6px}
+.bar{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;height:100%}
+.bar i{display:block;width:100%;border-radius:4px 4px 1px 1px;background:var(--water);min-height:2px}
+.bar i.hi{background:var(--accent)}
+.bar span{font-size:10.5px;color:var(--muted);font-family:var(--f-data)}
+.bar em{font-style:normal;font-size:10.5px;font-family:var(--f-data);color:var(--ink)}
+.hbar{display:grid;grid-template-columns:minmax(0,9rem) 1fr auto;align-items:center;gap:10px;font-size:14px;padding:5px 0}
+.hbar .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hbar .track{height:10px;border-radius:5px;background:var(--sunk);overflow:hidden}
+.hbar .track i{display:block;height:100%;background:var(--water);border-radius:5px}
+
+/* sheets */
+.sheet{position:fixed;inset:0;z-index:20;background:var(--bg);display:flex;flex-direction:column;animation:up .22s ease-out}
+@keyframes up{from{transform:translateY(24px);opacity:.4}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.sheet{animation:none}}
+.sheet-head{padding-top:calc(10px + env(safe-area-inset-top,0px));padding-bottom:10px;border-bottom:1px solid var(--line);background:var(--bg)}
+.sheet-head .in{max-width:620px;margin:0 auto;display:flex;align-items:center;gap:10px}
+.sheet-head h2{font:700 19px var(--f-display);margin:0;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sheet-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.sheet-body .in{max-width:620px;margin:0 auto;padding-block:16px 28px;display:flex;flex-direction:column;gap:18px}
+.sheet-foot{border-top:1px solid var(--line);background:var(--surface);padding-top:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}
+.sheet-foot .in{max-width:620px;margin:0 auto;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.sheet-foot .in .grow{flex:1}
+
+/* forms */
+fieldset{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+legend{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);padding:0;margin-bottom:10px}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field label,.lab{font-size:13px;font-weight:600}
+.hint{font-size:12.5px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media (max-width:380px){.grid3{grid-template-columns:1fr 1fr}}
+input[type=text],input[type=number],input[type=date],input[type=time],input[type=datetime-local],select,textarea{
+  width:100%;min-width:0;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 12px;min-height:46px;font-size:16px}
+textarea{min-height:90px;resize:vertical}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+.unit{position:relative}
+.unit input{padding-right:40px}
+.unit span{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);pointer-events:none}
+.weight-big input{font:600 22px var(--f-data);text-align:center}
+.toggle{display:flex;align-items:center;gap:10px;font-weight:600;font-size:14px}
+.toggle input{width:22px;height:22px;accent-color:var(--accent)}
+
+.photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ph{position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;background:var(--sunk);max-width:100%}
+.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph button{position:absolute;top:6px;right:6px;width:30px;height:30px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;display:grid;place-items:center}
+.ph button svg{width:14px;height:14px}
+.phbtns{display:flex;gap:10px;flex-wrap:wrap}
+.phbtns .btn{flex:1 1 140px}
+.phbtns .btn svg{color:var(--accent)}
+.addph{aspect-ratio:1;border-radius:12px;border:1.5px dashed var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;background:var(--surface);text-align:center;padding:6px}
+.addph svg{width:26px;height:26px;color:var(--accent)}
+.addph input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.locline{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;padding:10px 12px;border-radius:10px;background:var(--sunk)}
+.locline svg{width:18px;height:18px;flex:none;color:var(--water);margin-top:1px}
+.idline{font-size:13.5px;padding:10px 12px;border-radius:10px;background:var(--water-soft)}
+
+/* detail */
+.hero{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;border-radius:var(--r)}
+.hero img{width:100%;flex:none;scroll-snap-align:start;aspect-ratio:4/3;object-fit:cover;border-radius:var(--r);background:var(--sunk);max-width:100%}
+.hero .ph-empty{width:100%;aspect-ratio:16/9;border-radius:var(--r);background:var(--water-soft);display:grid;place-items:center;color:var(--water)}
+.hero .ph-empty svg{width:140px;height:80px}
+.big-title{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.big-title h3{font:700 30px/1.05 var(--f-display);letter-spacing:-.02em;margin:0;text-wrap:balance}
+.big-title .num{font-size:24px;font-weight:600}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.facts div{padding:10px 12px;min-width:0;box-shadow:1px 0 0 var(--line),0 1px 0 var(--line)}
+.facts dt{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.facts dd{margin:2px 0 0;font-weight:600;overflow-wrap:anywhere}
+.facts div.full{grid-column:1/-1}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.cardprev{width:100%;max-width:100%;border-radius:var(--r);box-shadow:var(--shadow)}
+
+.spref{display:flex;gap:12px;align-items:center;padding:8px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
+.spref img{width:112px;aspect-ratio:3/2;object-fit:cover;border-radius:8px;flex:none;max-width:100%}
+.spref div{min-width:0;display:flex;flex-direction:column;gap:2px}
+.spref .hint a,.refhero figcaption a{color:inherit}
+.refhero{margin:0;width:100%;display:flex;flex-direction:column;gap:6px}
+.refhero img{width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:var(--r);background:var(--sunk);max-width:100%}
+.refhero figcaption{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.thumb img.ref{filter:saturate(.85)}
+.guide{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px}
+.gtile{display:flex;flex-direction:column;gap:2px;text-align:left;background:none;border:0;padding:0;min-width:0}
+.gtile img,.gtile .gnone{width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:10px;background:var(--water-soft);display:grid;place-items:center;color:var(--water);max-width:100%}
+.gtile .gnone svg{width:46px;height:26px}
+.gtile b{font-size:14px;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gtile span{font-size:12px;color:var(--muted)}
+.cl-sum{display:flex;flex-direction:column;gap:8px;text-align:left;width:100%;cursor:pointer}
+.meter{height:10px;border-radius:5px;background:var(--sunk);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent);border-radius:5px}
+.cl-head{display:grid;grid-template-columns:auto 1fr;align-items:baseline;gap:4px 10px}
+.cl-head b{font-size:34px;line-height:1}
+.cl-head b span{font-size:18px;color:var(--muted)}
+.cl-head>span{color:var(--muted);font-weight:600}
+.cl-head .meter{grid-column:1/-1;margin-top:6px}
+.cl-group{display:flex;flex-direction:column;gap:8px}
+.cl-group h2{font:700 17px var(--f-display);margin:0}
+.cl-body{display:flex;flex-direction:column;gap:20px}
+.cl-list{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.cl-row{display:flex;align-items:center;gap:12px;padding:8px 12px;border-bottom:1px solid var(--line);cursor:pointer;min-height:60px}
+.cl-row:last-child{border-bottom:0}
+.cl-row input{width:24px;height:24px;flex:none;accent-color:var(--accent)}
+.cl-row img,.cl-row .cl-none{width:66px;aspect-ratio:3/2;object-fit:cover;border-radius:6px;flex:none;background:var(--water-soft);display:grid;place-items:center;color:var(--water);max-width:100%}
+.cl-row .cl-none svg{width:30px;height:18px}
+.cl-row:not(.on) img{filter:grayscale(.85);opacity:.7}
+.cl-txt{display:flex;flex-direction:column;min-width:0}
+.cl-txt b{font-size:15px}
+.cl-txt span{font-size:12.5px;color:var(--muted)}
+.cl-row.on .cl-txt span{color:var(--good)}
+.cl-body[data-show="todo"] .cl-row.on,.cl-body[data-show="done"] .cl-row:not(.on){display:none}
+.wxrow{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.wxrow .hint a{color:inherit}
+#f-gps{align-self:flex-start}
+.top-row #install{flex:none}
+.toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(12px + env(safe-area-inset-top,0px));z-index:40;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:600;font-size:14px;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<div class="app">
+  <header class="top wrap">
+    <div class="top-row">
+      <div class="brand">
+        <svg class="mark" viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="31" rx="17" ry="3.2" fill="none" stroke="var(--water)" stroke-width="1.4" opacity=".5"/><ellipse cx="20" cy="31" rx="9" ry="1.8" fill="none" stroke="var(--water)" stroke-width="1.4"/><path d="M18.3 31 L18.9 12 h2.2 L21.7 31 Z" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.4" stroke-linejoin="round"/><rect x="18.9" y="4" width="2.2" height="8.6" rx="1" fill="var(--accent)"/></svg>
+        <div><h1>Bankside</h1><div class="sub" id="subtitle">Fishing log</div></div>
+      </div>
+      <button class="btn small" id="install" hidden>Install app</button>
+    </div>
+  </header>
+  <main class="wrap" id="main" aria-live="polite"></main>
+</div>
+<nav class="tabs" aria-label="Sections"><div class="tabs-in" id="tabs"></div></nav>
+<div id="toast" class="toast" hidden role="status"></div>
+
+<script>
+(() => {
+"use strict";
+
+/* ------------------------------------------------------------------ data */
+const SPECIES = {
+  "Coarse": ["Roach","Rudd","Perch","Bream","Skimmer bream","Silver bream","Roach x bream hybrid","Common carp","Mirror carp","Leather carp","Ghost carp","F1 carp","Crucian carp","Grass carp","Tench","Chub","Dace","Barbel","Ide","Golden orfe","Gudgeon","Bleak","Ruffe","Eel","Minnow"],
+  "Predator": ["Pike","Zander","Wels catfish"],
+  "Game": ["Brown trout","Rainbow trout","Grayling","Sea trout","Salmon"]
+};
+const ALL_SPECIES = Object.values(SPECIES).flat();
+/* Reference photos of each species, from Wikimedia Commons. Each is Creative Commons or public domain; credits shown in the app. */
+const PHOTOS = {"Roach":{"file":"roach.jpg","title":"Rutilus rutilus by Algirdas cropped.jpg","page":"https://commons.wikimedia.org/wiki/File:Rutilus_rutilus_by_Algirdas_cropped.jpg","author":"Algirdas; cropped by George Chernilevsky","license":"CC BY-SA 3.0","license_url":"http://creativecommons.org/licenses/by-sa/3.0/"},"Rudd":{"file":"rudd.jpg","title":"Scardinius erythropthalmus 2009 G1.jpg","page":"https://commons.wikimedia.org/wiki/File:Scardinius_erythropthalmus_2009_G1.jpg","author":"George Chernilevsky","license":"Public domain","license_url":""},"Perch":{"file":"perch.jpg","title":"Perca fluviatilis 2008 G1.jpg","page":"https://commons.wikimedia.org/wiki/File:Perca_fluviatilis_2008_G1.jpg","author":"George Chernilevsky","license":"Public domain","license_url":""},"Bream":{"file":"bream.jpg","title":"Bronze coloured Abramis brama.jpg","page":"https://commons.wikimedia.org/wiki/File:Bronze_coloured_Abramis_brama.jpg","author":"Piet Spaans (viridiflavus)","license":"CC BY-SA 2.5","license_url":"https://creativecommons.org/licenses/by-sa/2.5"},"Skimmer bream":{"file":"skimmer-bream.jpg","title":"Abramis brama (Seine river).jpg","page":"https://commons.wikimedia.org/wiki/File:Abramis_brama_(Seine_river).jpg","author":"Nervurax Fishing","license":"CC BY-SA 4.0","license_url":"https://creativecommons.org/licenses/by-sa/4.0"},"Silver bream":{"file":"silver-bream.jpg","title":"Blicca bjoerkna Hungary.jpg","page":"https://commons.wikimedia.org/wiki/File:Blicca_bjoerkna_Hungary.jpg","author":"Harka, Akos","license":"CC BY 3.0","license_url":"https://creativecommons.org/licenses/by/3.0"},"Roach x bream hybrid":{"file":"roach-x-bream-hybrid.jpg","title":"Rutilus Rutilus x Abramis Brama.jpg","page":"https://commons.wikimedia.org/wiki/File:Rutilus_Rutilus_x_Abramis_Brama.jpg","author":"Jam123","license":"CC0","license_url":"http://creativecommons.org/publicdomain/zero/1.0/deed.en"},"Common carp":{"file":"common-carp.jpg","title":"Cyprinus carpio 358609762.jpg","page":"https://commons.wikimedia.org/wiki/File:Cyprinus_carpio_358609762.jpg","author":"Fishes of Texas team","license":"CC BY-SA 4.0","license_url":"https://creativecommons.org/licenses/by-sa/4.0"},"Mirror carp":{"file":"mirror-carp.jpg","title":"Mirror carp 2008 G1.jpg","page":"https://commons.wikimedia.org/wiki/File:Mirror_carp_2008_G1.jpg","author":"George Chernilevsky","license":"CC BY-SA 3.0","license_url":"https://creativecommons.org/licenses/by-sa/3.0"},"Crucian carp":{"file":"crucian-carp.jpg","title":"Cyprinidae Carassius carassius 1.jpg","page":"https://commons.wikimedia.org/wiki/File:Cyprinidae_Carassius_carassius_1.jpg","author":"NasserHalaweh","license":"CC BY-SA 4.0","license_url":"https://creativecommons.org/licenses/by-sa/4.0"},"Grass carp":{"file":"grass-carp.jpg","title":"Ctenopharyngodon idella 2.jpg","page":"https://commons.wikimedia.org/wiki/File:Ctenopharyngodon_idella_2.jpg","author":"Harka, Akos","license":"CC BY 3.0","license_url":"https://creativecommons.org/licenses/by/3.0"},"Tench":{"file":"tench.jpg","title":"Tinca tinca Prague Vltava 2.jpg","page":"https://commons.wikimedia.org/wiki/File:Tinca_tinca_Prague_Vltava_2.jpg","author":"Karelj","license":"Public domain","license_url":""},"Chub":{"file":"chub.jpg","title":"Squalius cephalus I.jpg","page":"https://commons.wikimedia.org/wiki/File:Squalius_cephalus_I.jpg","author":"Pohled 111","license":"CC BY-SA 4.0","license_url":"https://creativecommons.org/licenses/by-sa/4.0"},"Dace":{"file":"dace.jpg","title":"Leuciscus leuciscus Hungary.jpg","page":"https://commons.wikimedia.org/wiki/File:Leuciscus_leuciscus_Hungary.jpg","author":"Akos Harka","license":"CC BY 3.0","license_url":"https://creativecommons.org/licenses/by/3.0"},"Barbel":{"file":"barbel.jpg","title":"Barbel.jpg","page":"https://commons.wikimedia.org/wiki/File:Barbel.jpg","author":"Neil Phillips from uk","license":"CC BY 2.0","license_url":"https://creativecommons.org/licenses/by/2.0"},"Ide":{"file":"ide.jpg","title":"LeuciscusIdusWindeIde56cm 21-4-2009 16-46-58.JPG","page":"https://commons.wikimedia.org/wiki/File:LeuciscusIdusWindeIde56cm_21-4-2009_16-46-58.JPG","author":"Viridiflavus","license":"CC BY-SA 3.0","license_url":"https://creativecommons.org/licenses/by-sa/3.0"},"Gudgeon":{"file":"gudgeon.jpg","title":"Gobio gobio img 33568.jpg","page":"https://commons.wikimedia.org/wiki/File:Gobio_gobio_img_33568.jpg","author":"Pmau","license":"CC BY-SA 4.0","license_url":"https://creativecommons.org/licenses/by-sa/4.0"},"Bleak":{"file":"bleak.jpg","title":"Alburnus alburnus Hungary.jpg","page":"https://commons.wikimedia.org/wiki/File:Alburnus_alburnus_Hungary.jpg","author":"Harka, Akos","license":"CC BY 3.0","license_url":"https://creativecommons.org/licenses/by/3.0"},"Ruffe":{"file":"ruffe.jpg","title":"Gymnocephalus cernuus Pärnu River Estonia 2010-01-06.jpg","page":"https://commons.wikimedia.org/wiki/File:Gymnocephalus_cernuus_P%C3%A4rnu_River_Estonia_2010-01-06.jpg","author":"Tiit Hunt","license":"CC BY-SA 3.0","license_url":"https://creativecommons.org/licenses/by-sa/3.0"},"Eel":{"file":"eel.jpg","title":"Anguille d'Europe (Anguilla anguilla) (Ifremer 00673-78548).jpg","page":"https://commons.wikimedia.org/wiki/File:Anguille_d%27Europe_(Anguilla_anguilla)_(Ifremer_00673-78548).jpg","author":"Damien Delaunay","license":"CC BY 4.0","license_url":"https://creativecommons.org/licenses/by/4.0"},"Minnow":{"file":"minnow.jpg","title":"Phoxinus phoxinus img 33486.jpg","page":"https://commons.wikimedia.org/wiki/File:Phoxinus_phoxinus_img_33486.jpg","author":"Pmau","license":"CC BY-SA 4.0","license_url":"https://creativecommons.org/licenses/by-sa/4.0"},"Pike":{"file":"pike.jpg","title":"Esox lucius (no).JPG","page":"https://commons.wikimedia.org/wiki/File:Esox_lucius_(no).JPG","author":"Arnstein Rønning","license":"CC BY-SA 4.0","license_url":"https://creativecommons.org/licenses/by-sa/4.0"},"Zander":{"file":"zander.jpg","title":"Sander lucioperca Hungary.jpg","page":"https://commons.wikimedia.org/wiki/File:Sander_lucioperca_Hungary.jpg","author":"Harka, Akos","license":"CC BY 3.0","license_url":"https://creativecommons.org/licenses/by/3.0"},"Wels catfish":{"file":"wels-catfish.jpg","title":"Silurus glanis Linnaeus, 1758 2599925104.jpg","page":"https://commons.wikimedia.org/wiki/File:Silurus_glanis_Linnaeus,_1758_2599925104.jpg","author":"Naturalis Biodiversity Center","license":"CC0","license_url":"http://creativecommons.org/publicdomain/zero/1.0/deed.en"},"Leather carp":{"file":"leather-carp.jpg","title":"Carpe cuir dordogne.jpg","page":"https://commons.wikimedia.org/wiki/File:Carpe_cuir_dordogne.jpg","author":"Orochimarant","license":"CC BY-SA 4.0","license_url":"https://creativecommons.org/licenses/by-sa/4.0"},"Rainbow trout":{"file":"rainbow-trout.jpg","title":"Female Rainbow Trout in hand.JPG","page":"https://commons.wikimedia.org/wiki/File:Female_Rainbow_Trout_in_hand.JPG","author":"Mike Anderson","license":"CC BY-SA 3.0","license_url":"https://creativecommons.org/licenses/by-sa/3.0"},"Brown trout":{"file":"brown-trout.jpg","title":"Salmo trutta fario Portugal.jpg","page":"https://commons.wikimedia.org/wiki/File:Salmo_trutta_fario_Portugal.jpg","author":"João Carrola","license":"CC BY 3.0","license_url":"https://creativecommons.org/licenses/by/3.0"},"Grayling":{"file":"grayling.jpg","title":"Thymallus thymallus acqMilano.jpg","page":"https://commons.wikimedia.org/wiki/File:Thymallus_thymallus_acqMilano.jpg","author":"Marrabbio2","license":"CC BY-SA 3.0","license_url":"https://creativecommons.org/licenses/by-sa/3.0"},"Salmon":{"file":"salmon.jpg","title":"Atlantischer Lachs.jpg","page":"https://commons.wikimedia.org/wiki/File:Atlantischer_Lachs.jpg","author":"Hartley, William W.","license":"Public domain","license_url":""},"Sea trout":{"file":"sea-trout.jpg","title":"Salmo trutta trutta 1879.jpg","page":"https://commons.wikimedia.org/wiki/File:Salmo_trutta_trutta_1879.jpg","author":"William Houghton (text), A. F. Lydon (illustration), 1879","license":"Public domain","license_url":""}};
+const spPhoto = sp => PHOTOS[sp] ? "fish/" + PHOTOS[sp].file : null;
+function creditLine(sp) {
+  const p = PHOTOS[sp]; if (!p) return "";
+  return `Reference photo: ${p.author ? esc(p.author) + ", " : ""}<a href="${esc(p.license_url || p.page)}" target="_blank" rel="noopener">${esc(p.license)}</a>, via <a href="${esc(p.page)}" target="_blank" rel="noopener">Wikimedia Commons</a>`;
+}
+const METHODS = ["Waggler","Stick float","Pole","Feeder","Method feeder","Pellet feeder","Ledger","Bomb","Hair rig","Zig rig","Surface","Free-lining","Lure","Deadbait","Livebait","Fly"];
+const BAITS = ["Maggot","Caster","Worm","Pellet","Sweetcorn","Bread","Boilie","Hemp","Luncheon meat","Paste","Groundbait","Prawn"];
+const SKY = [["sun","Sunny"],["bright","Bright"],["cloud","Overcast"],["rain","Rain"],["showers","Showers"],["fog","Fog"],["frost","Frost"]];
+const WIND = ["Calm","Light","Breezy","Strong"];
+const DIRS = ["N","NE","E","SE","S","SW","W","NW"];
+const CLARITY = ["Clear","Tinted","Coloured"];
+const LEVEL = ["Up","Normal","Down"];
+
+/* ----------------------------------------------------------------- icons */
+const I = {
+  fish:'<svg viewBox="0 0 64 36" fill="currentColor" aria-hidden="true"><path d="M4 18c8-12 26-15 40-6l12-8-3 14 3 14-12-8C30 33 12 30 4 18z"/><circle cx="14" cy="16" r="2.2" fill="var(--surface)"/></svg>',
+  fishbig:'<svg class="big" viewBox="0 0 160 80" aria-hidden="true"><path d="M8 58c20 0 30-6 52-6s34 6 52 6 26-6 40-6" fill="none" stroke="currentColor" stroke-width="2" opacity=".35"/><path d="M30 34c12-15 36-19 54-8l16-10-4 18 4 18-16-10c-18 11-42 7-54-8z" fill="currentColor"/><circle cx="44" cy="31" r="2.6" fill="var(--surface)"/></svg>',
+  list:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 12c3-4 9-5 13-2l4-3-1 5 1 5-4-3c-4 3-10 2-13-2z"/></svg>',
+  cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
+  pin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
+  trophy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v5a5 5 0 0 1-10 0V4zM7 6H4v1.5A3.5 3.5 0 0 0 7.5 11M17 6h3v1.5a3.5 3.5 0 0 1-3.5 3.5M12 14v3M8.5 20h7l-1-3h-5z"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  camera:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+  spark:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg>',
+  image:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-9 8.5"/></svg>',
+  sun:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg>',
+  bright:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3"/><path d="M9 3v1.5M3 9h1.5M4.8 4.8l1 1M13.2 4.8l-1 1"/><path d="M8 19h10a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9.5 1.2A3 3 0 0 0 8 19z"/></svg>',
+  cloud:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M7 18h11a4 4 0 0 0 0-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 18z"/></svg>',
+  rain:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 14h11a4 4 0 0 0 0-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 14z"/><path d="M8 17l-1 3M12 17l-1 3M16 17l-1 3"/></svg>',
+  showers:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="7" r="2.6"/><path d="M10 15h8a3.5 3.5 0 0 0 0-7 5 5 0 0 0-8.6 1.4A2.8 2.8 0 0 0 10 15z"/><path d="M11 18l-1 2.5M15 18l-1 2.5"/></svg>',
+  fog:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 8h16M3 12h18M5 16h14M7 20h10"/></svg>',
+  frost:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.5L12 7l2.5-2.5M9.5 19.5L12 17l2.5 2.5"/></svg>',
+  wind:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 9h11a3 3 0 1 0-3-3M3 15h15a3 3 0 1 1-3 3M3 12h8"/></svg>',
+  therm:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 14V5a2 2 0 0 1 4 0v9a4 4 0 1 1-4 0z"/></svg>',
+  moon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M19 15A8 8 0 0 1 9 5a8 8 0 1 0 10 10z"/></svg>',
+  dl:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>',
+  edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>'
+};
+
+/* ----------------------------------------------------------------- utils */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pad = n => String(n).padStart(2, "0");
+const nowLocal = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const parseLocal = s => { if (!s) return null; const [d, t = "12:00"] = s.split("T"); const [y, m, dd] = d.split("-").map(Number); const [hh, mm] = t.split(":").map(Number); return new Date(y, m - 1, dd, hh || 0, mm || 0); };
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MON3 = MONTHS.map(m => m.slice(0,3));
+const DAYS3 = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const fmtDate = s => { const d = parseLocal(s); return d ? `${DAYS3[d.getDay()]} ${d.getDate()} ${MON3[d.getMonth()]} ${d.getFullYear()}` : ""; };
+const fmtShort = s => { const d = parseLocal(s); return d ? `${d.getDate()} ${MON3[d.getMonth()]}` : ""; };
+const fmtTime = s => (s && s.includes("T")) ? s.split("T")[1].slice(0,5) : "";
+const fmtClock = d => d ? `${pad(d.getHours())}:${pad(d.getMinutes())}` : "–";
+const num = v => { const n = parseFloat(String(v ?? "").replace(",", ".")); return Number.isFinite(n) ? n : null; };
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)).replace(/[^A-Za-z0-9-]/g, "");
+
+function fmtWeight(oz, units = S.settings.units) {
+  if (oz == null || !(oz > 0)) return "";
+  if (units === "kg") return (oz * 0.028349523).toFixed(oz * 0.028349523 < 10 ? 2 : 1) + " kg";
+  const lb = Math.floor(oz / 16); let r = oz - lb * 16; r = Math.round(r * 10) / 10;
+  if (lb === 0) return `${r} oz`;
+  return r ? `${lb} lb ${r} oz` : `${lb} lb`;
+}
+function haversineKm(a, b, c, d) {
+  const R = 6371, t = Math.PI / 180;
+  const x = Math.sin((c - a) * t / 2) ** 2 + Math.cos(a * t) * Math.cos(c * t) * Math.sin((d - b) * t / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(x));
+}
+function parseCoords(s) {
+  if (!s) return null;
+  s = String(s).trim();
+  let m = s.match(/@(-?\d+\.\d+),\s*(-?\d+\.\d+)/) || s.match(/[?&](?:q|ll|query)=(-?\d+\.\d+),\s*(-?\d+\.\d+)/) || s.match(/(-?\d{1,2}\.\d+)\s*[, ]\s*(-?\d{1,3}\.\d+)/);
+  if (!m) return null;
+  const lat = +m[1], lon = +m[2];
+  if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+  return { lat, lon };
+}
+const mapsUrl = (lat, lon) => `https://www.google.com/maps?q=${lat.toFixed(5)},${lon.toFixed(5)}`;
+
+/* sunrise / sunset (sunrise equation) and moon phase, worked out on the phone */
+function sunTimes(date, lat, lon) {
+  const rad = Math.PI / 180;
+  const ms = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 12);
+  const n = Math.round(ms / 864e5 + 2440587.5 - 2451545.0 + 0.0008);
+  const Js = n - lon / 360;
+  const M = ((357.5291 + 0.98560028 * Js) % 360 + 360) % 360;
+  const C = 1.9148 * Math.sin(M * rad) + 0.02 * Math.sin(2 * M * rad) + 0.0003 * Math.sin(3 * M * rad);
+  const L = (M + C + 180 + 102.9372) % 360;
+  const Jt = 2451545.0 + Js + 0.0053 * Math.sin(M * rad) - 0.0069 * Math.sin(2 * L * rad);
+  const dec = Math.asin(Math.sin(L * rad) * Math.sin(23.44 * rad));
+  const cosH = (Math.sin(-0.833 * rad) - Math.sin(lat * rad) * Math.sin(dec)) / (Math.cos(lat * rad) * Math.cos(dec));
+  if (cosH > 1 || cosH < -1) return null;
+  const H = Math.acos(cosH) / rad;
+  const toD = J => new Date((J - 2440587.5) * 864e5);
+  return { rise: toD(Jt - H / 360), set: toD(Jt + H / 360) };
+}
+function moonPhase(date) {
+  const jd = date.getTime() / 864e5 + 2440587.5;
+  const syn = 29.530588853;
+  let f = ((jd - 2451550.1) / syn) % 1; if (f < 0) f += 1;
+  const illum = Math.round((1 - Math.cos(2 * Math.PI * f)) / 2 * 100);
+  const names = [[0.033,"New moon"],[0.216,"Waxing crescent"],[0.283,"First quarter"],[0.466,"Waxing gibbous"],[0.533,"Full moon"],[0.716,"Waning gibbous"],[0.783,"Last quarter"],[0.966,"Waning crescent"],[1.01,"New moon"]];
+  return { name: names.find(([x]) => f < x)[1], illum };
+}
+
+/* EXIF: read GPS position and the time the photo was taken, from JPEG files */
+function readExif(buf) {
+  try {
+    const v = new DataView(buf);
+    if (v.getUint16(0) !== 0xFFD8) return null;
+    let off = 2;
+    while (off < v.byteLength - 4) {
+      const marker = v.getUint16(off); off += 2;
+      if ((marker & 0xFF00) !== 0xFF00 || marker === 0xFFDA) break;
+      const len = v.getUint16(off);
+      if (marker === 0xFFE1 && v.getUint32(off + 2) === 0x45786966) return parseTiff(v, off + 8);
+      off += len;
+    }
+  } catch (e) {}
+  return null;
+}
+function parseTiff(v, t) {
+  const le = v.getUint16(t) === 0x4949;
+  const u16 = o => v.getUint16(o, le), u32 = o => v.getUint32(o, le);
+  const entries = ifd => { const n = u16(ifd), out = {}; for (let i = 0; i < n; i++) { const e = ifd + 2 + i * 12; out[u16(e)] = { type: u16(e + 2), count: u32(e + 4), voff: e + 8 }; } return out; };
+  const size = { 1:1, 2:1, 3:2, 4:4, 5:8, 7:1, 9:4, 10:8 };
+  const val = en => {
+    const { type, count, voff } = en, sz = (size[type] || 1) * count;
+    const p = sz > 4 ? t + u32(voff) : voff;
+    if (type === 2) { let s = ""; for (let i = 0; i < count - 1; i++) s += String.fromCharCode(v.getUint8(p + i)); return s.replace(/\0+$/, ""); }
+    if (type === 5 || type === 10) { const a = []; for (let i = 0; i < count; i++) { const nn = type === 5 ? u32(p + i * 8) : v.getInt32(p + i * 8, le); const dd = type === 5 ? u32(p + i * 8 + 4) : v.getInt32(p + i * 8 + 4, le); a.push(dd ? nn / dd : 0); } return a; }
+    if (type === 3) return u16(p); if (type === 4) return u32(p); return v.getUint8(p);
+  };
+  const res = {};
+  const e0 = entries(t + u32(t + 4));
+  if (e0[0x8769]) { const ex = entries(t + val(e0[0x8769])); const dt = ex[0x9003] || ex[0x9004]; if (dt) res.date = val(dt); }
+  if (!res.date && e0[0x0132]) res.date = val(e0[0x0132]);
+  if (e0[0x8825]) {
+    const g = entries(t + val(e0[0x8825]));
+    if (g[2] && g[4]) {
+      const la = val(g[2]), lo = val(g[4]);
+      let lat = la[0] + la[1] / 60 + la[2] / 3600, lon = lo[0] + lo[1] / 60 + lo[2] / 3600;
+      if (g[1] && val(g[1]) === "S") lat = -lat;
+      if (g[3] && val(g[3]) === "W") lon = -lon;
+      if (Number.isFinite(lat) && Number.isFinite(lon) && !(lat === 0 && lon === 0)) { res.lat = lat; res.lon = lon; }
+    }
+  }
+  if (res.date) { const m = res.date.match(/^(\d{4}):(\d{2}):(\d{2})[ T](\d{2}):(\d{2})/); res.when = m ? `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}` : null; }
+  return res;
+}
+async function loadBitmap(blob) {
+  if (window.createImageBitmap) { try { return await createImageBitmap(blob, { imageOrientation: "from-image" }); } catch (e) {} }
+  return await new Promise((ok, no) => { const img = new Image(); const u = URL.createObjectURL(blob); img.onload = () => ok(img); img.onerror = () => no(new Error("decode")); img.src = u; });
+}
+async function shrink(file, max = 1600, q = 0.85) {
+  const bm = await loadBitmap(file);
+  const w = bm.width, h = bm.height, k = Math.min(1, max / Math.max(w, h));
+  const cv = document.createElement("canvas"); cv.width = Math.round(w * k); cv.height = Math.round(h * k);
+  cv.getContext("2d").drawImage(bm, 0, 0, cv.width, cv.height);
+  return await new Promise((ok, no) => cv.toBlob(b => b ? ok(b) : no(new Error("encode")), "image/jpeg", q));
+}
+
+/* ---------------------------------------------------------------- phone storage
+   Everything is kept on this phone in IndexedDB, so the app works with no signal.
+   These objects copy the small part of the old Claude storage API the app uses. */
+const IDB = {
+  db: null,
+  open() {
+    return new Promise((ok, no) => {
+      const r = indexedDB.open("bankside", 1);
+      r.onupgradeneeded = () => { for (const s of ["catches", "sessions", "venues", "settings", "photos"]) if (!r.result.objectStoreNames.contains(s)) r.result.createObjectStore(s, { keyPath: "id" }); };
+      r.onsuccess = () => { IDB.db = r.result; ok(); };
+      r.onerror = () => no(r.error);
+    });
+  },
+  tx(store, mode, fn) {
+    return new Promise((ok, no) => {
+      const t = IDB.db.transaction(store, mode); const st = t.objectStore(store); let out;
+      const q = fn(st); if (q) q.onsuccess = () => { out = q.result; };
+      t.oncomplete = () => ok(out); t.onerror = () => no(t.error); t.onabort = () => no(t.error || new Error("aborted"));
+    });
+  },
+  all: s => IDB.tx(s, "readonly", st => st.getAll()),
+  get: (s, id) => IDB.tx(s, "readonly", st => st.get(id)),
+  put: (s, v) => IDB.tx(s, "readwrite", st => st.put(v)),
+  del: (s, id) => IDB.tx(s, "readwrite", st => st.delete(id)),
+  clear: s => IDB.tx(s, "readwrite", st => st.clear())
+};
+const LocalDB = (() => {
+  const subs = [];
+  const snap = rows => ({ docs: rows.map(r => { const { id, ...d } = r; return { id, exists: true, data: () => d }; }) });
+  async function notify(store) {
+    for (const s of subs) {
+      if (s.store !== store) continue;
+      if (s.kind === "col") s.cb(snap(await IDB.all(store)));
+      else { const r = await IDB.get(store, s.id); s.cb(r ? { id: s.id, exists: true, data: () => { const { id, ...d } = r; return d; } } : { id: s.id, exists: false, data: () => undefined }); }
+    }
+  }
+  const docRef = (store, id) => ({
+    id,
+    set: async d => { await IDB.put(store, { ...JSON.parse(JSON.stringify(d)), id }); await notify(store); },
+    update: async d => { const cur = await IDB.get(store, id); if (!cur) throw { code: "invalid_argument" }; await IDB.put(store, { ...cur, ...JSON.parse(JSON.stringify(d)), id }); await notify(store); },
+    delete: async () => { await IDB.del(store, id); await notify(store); },
+    get: async () => { const r = await IDB.get(store, id); return { id, exists: !!r, data: () => r }; },
+    onSnapshot: cb => { subs.push({ kind: "doc", store, id, cb }); notify(store); return () => {}; }
+  });
+  return {
+    collection: store => ({ doc: id => docRef(store, id || uid()), onSnapshot: cb => { subs.push({ kind: "col", store, cb }); notify(store); return () => {}; } }),
+    doc: path => { const [store, id] = path.split("/"); return docRef(store, id); },
+    notify
+  };
+})();
+
+const PHOTO_URLS = {};
+async function photoBlob(id) { const r = await IDB.get("photos", id); return r ? r.blob : null; }
+async function loadPhotoUrls(ids) {
+  let changed = false;
+  for (const id of ids) {
+    if (PHOTO_URLS[id]) continue;
+    const b = await photoBlob(id);
+    if (b) { PHOTO_URLS[id] = URL.createObjectURL(b); changed = true; }
+  }
+  return changed;
+}
+const LocalAssets = {
+  async upload(blob) { const id = uid(); await IDB.put("photos", { id, blob, createdAt: new Date().toISOString() }); PHOTO_URLS[id] = URL.createObjectURL(blob); return { id, url: PHOTO_URLS[id] }; },
+  async delete(id) { await IDB.del("photos", id); if (PHOTO_URLS[id]) { URL.revokeObjectURL(PHOTO_URLS[id]); delete PHOTO_URLS[id]; } return { deleted: true }; }
+};
+const LocalDownloads = {
+  async save({ filename, data }) {
+    const type = filename.endsWith(".csv") ? "text/csv" : filename.endsWith(".json") ? "application/json" : "image/jpeg";
+    const blob = data instanceof Blob ? data : new Blob([data], { type });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+    return { status: "saved" };
+  }
+};
+async function shareFile(filename, blob, text) {
+  const file = new File([blob], filename, { type: blob.type || "image/jpeg" });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text }); return true; }
+  return false;
+}
+
+/* ---------------------------------------------------------------- GPS */
+function getGps() {
+  return new Promise((ok, no) => {
+    if (!navigator.geolocation) return no(new Error("none"));
+    navigator.geolocation.getCurrentPosition(p => ok({ lat: p.coords.latitude, lon: p.coords.longitude, acc: Math.round(p.coords.accuracy) }), no, { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 });
+  });
+}
+async function gpsAllowed() { try { return (await navigator.permissions.query({ name: "geolocation" })).state === "granted"; } catch (e) { return false; } }
+
+/* ---------------------------------------------------------------- weather (Open-Meteo) */
+const WX_VARS = "temperature_2m,weather_code,cloud_cover,pressure_msl,wind_speed_10m,wind_direction_10m";
+function skyFrom(code, cloud) {
+  if (code == null) return null;
+  if (code === 0) return "sun";
+  if (code === 1 || code === 2) return cloud != null && cloud < 30 ? "sun" : "bright";
+  if (code === 3) return "cloud";
+  if (code === 45 || code === 48) return "fog";
+  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return "frost";
+  if (code >= 80 && code <= 82) return "showers";
+  if ((code >= 51 && code <= 67) || code >= 95) return "rain";
+  return null;
+}
+function windWord(mph) { if (mph == null) return null; if (mph < 3) return "Calm"; if (mph < 8) return "Light"; if (mph < 19) return "Breezy"; return "Strong"; }
+function dirWord(deg) { if (deg == null) return null; return DIRS[Math.round(((deg % 360) + 360) % 360 / 45) % 8]; }
+async function getWeather(lat, lon, whenLocal) {
+  const when = whenLocal || nowLocal();
+  const day = when.slice(0, 10), hr = +when.slice(11, 13) || 12;
+  const d0 = new Date(day + "T12:00:00"); const prev = new Date(d0.getTime() - 864e5);
+  const prevDay = `${prev.getFullYear()}-${pad(prev.getMonth() + 1)}-${pad(prev.getDate())}`;
+  const ageDays = (Date.now() - d0.getTime()) / 864e5;
+  const host = ageDays > 80 ? "https://archive-api.open-meteo.com/v1/archive" : "https://api.open-meteo.com/v1/forecast";
+  const url = `${host}?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}&hourly=${WX_VARS}&wind_speed_unit=mph&timezone=auto&start_date=${prevDay}&end_date=${day}`;
+  const r = await fetch(url); if (!r.ok) throw new Error("weather " + r.status);
+  const j = await r.json(); const h = j.hourly || {};
+  const i = (h.time || []).indexOf(`${day}T${pad(hr)}:00`); if (i < 0) throw new Error("no hour");
+  const v = k => (h[k] && h[k][i] != null) ? h[k][i] : null;
+  const p = v("pressure_msl"), p3 = (h.pressure_msl && i >= 3) ? h.pressure_msl[i - 3] : null;
+  const trend = p != null && p3 != null ? (p - p3 >= 1 ? "Rising" : p3 - p >= 1 ? "Falling" : "Steady") : null;
+  const cond = { sky: skyFrom(v("weather_code"), v("cloud_cover")), wind: windWord(v("wind_speed_10m")), windDir: dirWord(v("wind_direction_10m")),
+    airC: v("temperature_2m") != null ? Math.round(v("temperature_2m") * 10) / 10 : null, pressure: p != null ? Math.round(p) : null, trend };
+  for (const k in cond) if (cond[k] == null) delete cond[k];
+  return { cond, hour: `${pad(hr)}:00`, windMph: v("wind_speed_10m") };
+}
+const WX_CREDIT = `Weather data by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a>`;
+
+/* ---------------------------------------------------------------- backup and restore */
+function blobToDataUrl(b) { return new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = () => no(r.error); r.readAsDataURL(b); }); }
+async function dataUrlToBlob(u) { return await (await fetch(u)).blob(); }
+async function makeBackup() {
+  const out = { app: "bankside", format: 1, exported: new Date().toISOString(), catches: await IDB.all("catches"), sessions: await IDB.all("sessions"), venues: await IDB.all("venues"), settings: await IDB.all("settings"), photos: {} };
+  for (const p of await IDB.all("photos")) out.photos[p.id] = await blobToDataUrl(p.blob);
+  return JSON.stringify(out);
+}
+async function restoreBackup(text) {
+  const j = JSON.parse(text);
+  if (j.app !== "bankside") throw new Error("not a Bankside backup");
+  for (const s of ["catches", "sessions", "venues", "settings", "photos"]) await IDB.clear(s);
+  for (const s of ["catches", "sessions", "venues", "settings"]) for (const row of j[s] || []) await IDB.put(s, row);
+  for (const [id, u] of Object.entries(j.photos || {})) await IDB.put("photos", { id, blob: await dataUrlToBlob(u) });
+  for (const k of Object.keys(PHOTO_URLS)) { URL.revokeObjectURL(PHOTO_URLS[k]); delete PHOTO_URLS[k]; }
+  for (const s of ["catches", "sessions", "venues", "settings"]) await LocalDB.notify(s);
+}
+
+/* ---------------------------------------------------------------- install button */
+let installEvt = null;
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; const b = document.getElementById("install"); if (b) b.hidden = false; });
+window.addEventListener("appinstalled", () => { installEvt = null; const b = document.getElementById("install"); if (b) b.hidden = true; });
+
+/* ----------------------------------------------------------------- state */
+const S = {
+  db: null, assets: null, downloads: null, sample: null, canIdentify: false, isOwner: null,
+  catches: [], sessions: [], venues: [], settings: { units: "lboz", licences: [] },
+  loaded: { catches: false, sessions: false, venues: false }, status: "connecting",
+  view: "catches", filter: null, stack: []
+};
+try { const v = localStorage.getItem("bankside.view"); if (["catches","sessions","venues","records"].includes(v)) S.view = v; } catch (e) {}
+
+const venueById = id => S.venues.find(v => v.id === id);
+const sessionById = id => S.sessions.find(s => s.id === id);
+const venueName = x => (x && x.venueId && venueById(x.venueId)?.name) || x?.venueName || "No venue";
+const photoUrl = id => PHOTO_URLS[id] || "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+function pbMap() { const m = {}; for (const c of S.catches) if (c.weightOz > 0 && (!m[c.species] || c.weightOz > m[c.species].weightOz)) m[c.species] = c; return m; }
+function recentSpecies() { const seen = []; for (const c of [...S.catches].sort((a, b) => (b.when || "").localeCompare(a.when || ""))) { if (!seen.includes(c.species)) seen.push(c.species); if (seen.length >= 6) break; } return seen; }
+function caughtMap() {
+  const m = {};
+  for (const c of S.catches) { if (c.example) continue; if (!m[c.species] || (c.when || "") < m[c.species]) m[c.species] = c.when || ""; }
+  return m;
+}
+function checklistState() {
+  const logged = caughtMap(), ticked = S.settings.ticked || {};
+  const others = Object.keys(logged).filter(sp => !ALL_SPECIES.includes(sp)).sort();
+  const all = [...ALL_SPECIES, ...others];
+  const done = all.filter(sp => logged[sp] !== undefined || ticked[sp]);
+  return { logged, ticked, all, others, done };
+}
+let settingsQ = Promise.resolve();
+function saveSettings(patch) {
+  S.settings = { ...S.settings, ...patch };
+  const body = { ...S.settings };
+  settingsQ = settingsQ.then(() => write(() => S.db.doc("settings/main").set(body))).catch(er => toast(dbErr(er)));
+  return settingsQ;
+}
+const hasExamples = () => [...S.catches, ...S.sessions, ...S.venues].some(x => x.example);
+
+/* ---------------------------------------------------------------- toast */
+let toastT;
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3200); }
+
+/* ---------------------------------------------------------------- render */
+function render() {
+  renderTabs();
+  const m = $("#main");
+  const views = { catches: viewCatches, sessions: viewSessions, venues: viewVenues, records: viewRecords };
+  m.innerHTML = (views[S.view] || viewCatches)();
+  for (const s of S.stack) if (s.refresh) s.refresh();
+}
+function renderTabs() {
+  const t = (k, label, icon) => `<button class="tab" data-tab="${k}" ${S.view === k ? 'aria-current="page"' : ""}>${icon}<span>${label}</span></button>`;
+  $("#tabs").innerHTML = t("catches", "Catches", I.list) + t("sessions", "Sessions", I.cal) +
+    `<button class="tab add" data-act="new-catch" aria-label="Log a catch"><span class="plus">${I.plus}</span><span>Log</span></button>` +
+    t("venues", "Venues", I.pin) + t("records", "Records", I.trophy);
+  $("#subtitle").textContent = { catches: "Catches", sessions: "Sessions", venues: "Venues", records: "Records & stats" }[S.view];
+}
+
+function statusBlock() {
+  if (S.status === "connecting") return `<div class="empty">${I.fishbig}<h3>Opening your log…</h3><p>Loading your catches from this phone.</p></div>`;
+  if (S.status === "broken") return `<div class="empty">${I.fishbig}<h3>Your log can't open</h3><p>This browser is blocking storage. Open Bankside in Chrome, not in a private tab.</p></div>`;
+  if (S.status === "none") return `<div class="empty">${I.fishbig}<h3>Sign in to use your log</h3><p>Open Bankside in Claude while you're signed in. Your catches are saved to your account, so they're the same on your phone and computer.</p></div>`;
+  if (S.status === "denied") return `<div class="empty">${I.fishbig}<h3>This log is private</h3><p>Only its owner can see and add catches.</p></div>`;
+  return "";
+}
+function topBanners() {
+  let h = "";
+  const today = new Date(); today.setHours(0,0,0,0);
+  for (const l of S.settings.licences || []) {
+    if (!l.expires) continue;
+    const d = parseLocal(l.expires); const days = Math.round((d - today) / 864e5);
+    if (days < 0) h += `<div class="banner bad"><p><b>${esc(l.name)}</b> expired on ${fmtDate(l.expires)}.</p><button class="btn small" data-act="licences">Update</button></div>`;
+    else if (days <= 30) h += `<div class="banner warn"><p><b>${esc(l.name)}</b> runs out in ${days} day${days === 1 ? "" : "s"} (${fmtShort(l.expires)}).</p><button class="btn small" data-act="licences">Update</button></div>`;
+  }
+  if (S.catches.length && (!S.settings.lastBackup || (Date.now() - parseLocal(S.settings.lastBackup)) / 864e5 > 30)) h += `<div class="banner warn"><p>${S.settings.lastBackup ? "It's over a month since your last backup." : "Your catches are only on this phone."} Back up so you don't lose them.</p><button class="btn small" data-act="backup">Back up now</button></div>`;
+  if (hasExamples()) h += `<div class="banner"><p>The entries marked <b>Example</b> show how the log fills up. Remove them when you're ready to start.</p><button class="btn small" data-act="clear-examples">Remove examples</button></div>`;
+  return h;
+}
+
+function catchCard(c, pbs) {
+  const ph = c.photos && c.photos[0];
+  const isPb = pbs[c.species] && pbs[c.species].id === c.id;
+  return `<button class="card" data-open-catch="${esc(c.id)}">
+    <div class="thumb">${ph ? `<img src="${esc(photoUrl(ph))}" alt="" loading="lazy">` : spPhoto(c.species) ? `<img class="ref" src="${esc(spPhoto(c.species))}" alt="" loading="lazy">` : I.fish}</div>
+    <div class="card-body">
+      <div class="card-title"><strong>${esc(c.species)}</strong><span class="num">${esc(fmtWeight(c.weightOz))}</span></div>
+      <div class="meta">${esc(venueName(c))}${c.peg ? " · peg " + esc(c.peg) : ""}</div>
+      <div class="meta">${esc(fmtDate(c.when))}${fmtTime(c.when) ? " · " + fmtTime(c.when) : ""}${c.bait ? " · " + esc(c.bait) : ""}</div>
+      <div class="badges">${isPb ? '<span class="badge pb">PB</span>' : ""}${c.example ? '<span class="badge ex">Example</span>' : ""}${c.released === false ? '<span class="badge">Retained</span>' : ""}</div>
+    </div></button>`;
+}
+
+function viewCatches() {
+  if (S.status !== "ready") return statusBlock();
+  let h = topBanners();
+  const year = new Date().getFullYear();
+  const thisYear = S.catches.filter(c => (c.when || "").startsWith(String(year)));
+  const yrSessions = S.sessions.filter(s => (s.date || "").startsWith(String(year)));
+  const best = thisYear.reduce((a, c) => (c.weightOz || 0) > (a?.weightOz || 0) ? c : a, null);
+  if (!S.catches.length) {
+    return h + `<div class="empty">${I.fishbig}<h3>No catches yet</h3><p>Take a photo of your fish, pick the species, add the weight. Bankside fills in the rest where it can.</p><button class="btn primary" data-act="new-catch">${I.plus} Log your first catch</button></div>`;
+  }
+  h += `<div class="season" aria-label="${year} so far"><div><b>${thisYear.length}</b><span>Fish in ${year}</span></div><div><b>${yrSessions.length}</b><span>Sessions</span></div><div><b>${best ? esc(fmtWeight(best.weightOz)) || "–" : "–"}</b><span>${best ? "Best: " + esc(best.species) : "Best fish"}</span></div></div>`;
+  const species = [...new Set(S.catches.map(c => c.species))].sort();
+  if (species.length > 1) {
+    h += `<div class="chips" role="group" aria-label="Filter by species"><button class="chip" data-filter="" aria-pressed="${!S.filter}">All</button>` +
+      species.map(s => `<button class="chip" data-filter="${esc(s)}" aria-pressed="${S.filter === s}">${esc(s)}</button>`).join("") + `</div>`;
+  }
+  const pbs = pbMap();
+  const list = S.catches.filter(c => !S.filter || c.species === S.filter).sort((a, b) => (b.when || "").localeCompare(a.when || ""));
+  let lastM = "";
+  h += `<div class="list">`;
+  for (const c of list) {
+    const d = parseLocal(c.when); const mk = d ? `${MONTHS[d.getMonth()]} ${d.getFullYear()}` : "Undated";
+    if (mk !== lastM) { h += `<div class="month-h">${mk}</div>`; lastM = mk; }
+    h += catchCard(c, pbs);
+  }
+  return h + `</div>`;
+}
+
+function condIcons(cond) {
+  if (!cond) return "";
+  const sky = SKY.find(s => s[0] === cond.sky);
+  return `<span class="cond-icons">${sky ? I[sky[0]] : ""}${cond.airC != null ? `<span class="num">${cond.airC}°</span>` : ""}${cond.wind ? `${I.wind}<span>${esc(cond.wind)}${cond.windDir ? " " + esc(cond.windDir) : ""}</span>` : ""}</span>`;
+}
+function sessionStats(s) {
+  const cs = S.catches.filter(c => c.sessionId === s.id);
+  return { n: cs.length, total: cs.reduce((a, c) => a + (c.weightOz || 0), 0), cs };
+}
+function viewSessions() {
+  if (S.status !== "ready") return statusBlock();
+  let h = topBanners();
+  h += `<div class="section-h"><h2>Sessions</h2><button class="btn small" data-act="new-session">${I.plus} New session</button></div>`;
+  if (!S.sessions.length) return h + `<div class="empty">${I.fishbig}<h3>No sessions yet</h3><p>A session is one trip: a date and a venue. Bankside makes one for you when you log a catch, or you can start one before you cast.</p></div>`;
+  const list = [...S.sessions].sort((a, b) => (b.date || "").localeCompare(a.date || "") || (b.start || "").localeCompare(a.start || ""));
+  let lastM = ""; h += `<div class="list">`;
+  for (const s of list) {
+    const d = parseLocal(s.date); const mk = d ? `${MONTHS[d.getMonth()]} ${d.getFullYear()}` : "";
+    if (mk !== lastM) { h += `<div class="month-h">${mk}</div>`; lastM = mk; }
+    const st = sessionStats(s);
+    h += `<button class="row-card" data-open-session="${esc(s.id)}">
+      <div class="datebox"><b>${d ? d.getDate() : "?"}</b><span>${d ? DAYS3[d.getDay()] : ""}</span></div>
+      <div class="row-main"><strong>${esc(venueName(s))}${s.peg ? " · peg " + esc(s.peg) : ""}</strong><div class="meta">${condIcons(s.cond) || "No conditions noted"}</div>${s.example ? '<div class="badges"><span class="badge ex">Example</span></div>' : ""}</div>
+      <div class="row-side"><b>${st.n} fish</b><span class="num">${esc(fmtWeight(st.total)) || "–"}</span></div></button>`;
+  }
+  return h + `</div>`;
+}
+
+function viewVenues() {
+  if (S.status !== "ready") return statusBlock();
+  let h = topBanners();
+  h += `<div class="section-h"><h2>Venues</h2><button class="btn small" data-act="new-venue">${I.plus} Add venue</button></div>`;
+  if (!S.venues.length) return h + `<div class="empty">${I.fishbig}<h3>No venues yet</h3><p>Add the waters you fish, with their location. Bankside then picks the right venue when a photo carries a location.</p></div>`;
+  h += `<div class="list">`;
+  for (const v of [...S.venues].sort((a, b) => a.name.localeCompare(b.name))) {
+    const cs = S.catches.filter(c => c.venueId === v.id), ss = S.sessions.filter(s => s.venueId === v.id);
+    h += `<button class="row-card" data-open-venue="${esc(v.id)}"><div class="thumb" style="width:48px;height:48px">${I.pin}</div>
+      <div class="row-main"><strong>${esc(v.name)}</strong><div class="meta">${esc(v.club || (v.lat != null ? "Location saved" : "No location yet"))}</div>${v.example ? '<div class="badges"><span class="badge ex">Example</span></div>' : ""}</div>
+      <div class="row-side"><b>${cs.length} fish</b><span>${ss.length} session${ss.length === 1 ? "" : "s"}</span></div></button>`;
+  }
+  return h + `</div>`;
+}
+
+function countBy(arr, key) { const m = new Map(); for (const x of arr) { const k = typeof key === "function" ? key(x) : x[key]; if (!k) continue; m.set(k, (m.get(k) || 0) + 1); } return [...m.entries()].sort((a, b) => b[1] - a[1]); }
+function hbars(rows, max) { return rows.map(([k, n]) => `<div class="hbar"><span class="t">${esc(k)}</span><span class="track"><i style="width:${Math.max(4, n / max * 100)}%"></i></span><span class="num">${n}</span></div>`).join(""); }
+function viewRecords() {
+  if (S.status !== "ready") return statusBlock();
+  let h = topBanners();
+  { const st = checklistState(); const pct = Math.round(st.done.length / st.all.length * 100);
+    h += `<button class="panel cl-sum" data-act="checklist"><div class="section-h"><h3 style="margin:0">Species checklist</h3><span class="num">${st.done.length} / ${st.all.length}</span></div>
+      <div class="meter" role="img" aria-label="${st.done.length} of ${st.all.length} species caught"><i style="width:${pct}%"></i></div>
+      <span class="hint">${st.done.length ? "Tap to see what's left and tick off species you caught before using Bankside." : "Tick off every species you've ever caught."}</span></button>`; }
+  const pbs = Object.values(pbMap()).sort((a, b) => b.weightOz - a.weightOz);
+  h += `<div class="panel"><h3>Personal bests</h3>`;
+  if (!pbs.length) h += `<p class="muted" style="margin:0">Your heaviest fish of each species appear here once you log weights.</p>`;
+  else h += `<div class="scrollx"><table class="table"><thead><tr><th>Species</th><th class="r">Weight</th><th>Venue</th><th class="r">Date</th></tr></thead><tbody>` +
+    pbs.map(c => `<tr data-open-catch="${esc(c.id)}" data-open><td><b>${esc(c.species)}</b></td><td class="r num">${esc(fmtWeight(c.weightOz))}</td><td>${esc(venueName(c))}</td><td class="r">${esc(fmtShort(c.when))} ${(c.when || "").slice(2,4) ? "’" + (c.when || "").slice(2,4) : ""}</td></tr>`).join("") + `</tbody></table></div>`;
+  h += `</div>`;
+
+  if (S.catches.length) {
+    const total = S.catches.reduce((a, c) => a + (c.weightOz || 0), 0);
+    h += `<div class="season"><div><b>${S.catches.length}</b><span>Fish logged</span></div><div><b>${new Set(S.catches.map(c => c.species)).size}</b><span>Species</span></div><div><b>${esc(fmtWeight(total)) || "–"}</b><span>Total weight</span></div></div>`;
+    // by month, last 12
+    const now = new Date(); const months = [];
+    for (let i = 11; i >= 0; i--) { const d = new Date(now.getFullYear(), now.getMonth() - i, 1); months.push([`${d.getFullYear()}-${pad(d.getMonth()+1)}`, MON3[d.getMonth()][0]]); }
+    const mc = months.map(([k]) => S.catches.filter(c => (c.when || "").startsWith(k)).length);
+    const mmax = Math.max(1, ...mc);
+    h += `<div class="panel"><h3>Fish per month</h3><div class="bars" role="img" aria-label="Fish caught per month over the last 12 months">` +
+      months.map(([k, l], i) => `<div class="bar"><em>${mc[i] || ""}</em><i class="${mc[i] === mmax && mc.filter(x => x === mmax).length === 1 ? "hi" : ""}" style="height:${mc[i] / mmax * 82}%"></i><span>${l}</span></div>`).join("") + `</div></div>`;
+    // by hour
+    const hours = Array.from({ length: 24 }, (_, i) => i);
+    const hc = hours.map(hr => S.catches.filter(c => fmtTime(c.when) && +fmtTime(c.when).slice(0,2) === hr).length);
+    const first = hc.findIndex(x => x), last = 23 - [...hc].reverse().findIndex(x => x);
+    if (first >= 0) {
+      const lo = Math.max(0, Math.min(first, 5)), hi = Math.min(23, Math.max(last, 21)); const hmax = Math.max(1, ...hc);
+      h += `<div class="panel"><h3>Time of day</h3><div class="bars" role="img" aria-label="Fish caught by hour of the day">` +
+        hours.slice(lo, hi + 1).map(hr => `<div class="bar"><em>${hc[hr] || ""}</em><i class="${hc[hr] === hmax && hc.filter(x => x === hmax).length === 1 ? "hi" : ""}" style="height:${hc[hr] / hmax * 82}%"></i><span>${hr % 3 === 0 ? pad(hr) : ""}</span></div>`).join("") + `</div></div>`;
+    }
+    const baits = countBy(S.catches, "bait").slice(0, 6), meths = countBy(S.catches, "method").slice(0, 6), vens = countBy(S.catches, c => venueName(c)).slice(0, 6);
+    if (baits.length) h += `<div class="panel"><h3>Best baits</h3>${hbars(baits, baits[0][1])}</div>`;
+    if (meths.length) h += `<div class="panel"><h3>Best methods</h3>${hbars(meths, meths[0][1])}</div>`;
+    if (vens.length) h += `<div class="panel"><h3>Venues by fish caught</h3>${hbars(vens, vens[0][1])}</div>`;
+  }
+  // licences + settings
+  const lic = S.settings.licences || [];
+  h += `<div class="panel"><div class="section-h" style="margin-bottom:10px"><h3 style="margin:0">Species guide</h3><button class="btn small ghost" data-act="credits">Photo credits</button></div><div class="guide">` +
+    ALL_SPECIES.map(sp => { const n = S.catches.filter(c => c.species === sp).length; const src = spPhoto(sp);
+      return `<button class="gtile" data-guide="${esc(sp)}">${src ? `<img src="${esc(src)}" alt="" loading="lazy">` : `<span class="gnone">${I.fish}</span>`}<b>${esc(sp)}</b><span>${n ? n + " logged" : (S.settings.ticked || {})[sp] ? "Caught before" : "Not yet"}</span></button>`; }).join("") + `</div></div>`;
+  h += `<div class="panel"><h3>Licences & tickets</h3>` +
+    (lic.length ? `<table class="table"><tbody>${lic.map(l => `<tr><td>${esc(l.name)}</td><td class="r">${l.expires ? "Runs out " + esc(fmtShort(l.expires)) + " " + esc(l.expires.slice(0,4)) : "No date"}</td></tr>`).join("")}</tbody></table>` : `<p class="muted" style="margin:0 0 10px">Add your rod licence and club books. Bankside warns you 30 days before they run out.</p>`) +
+    `<div class="actions" style="margin-top:10px"><button class="btn small" data-act="licences">${I.edit} Edit</button></div></div>`;
+  h += `<div class="panel"><h3>Settings</h3><div class="actions">
+    <div class="chips" role="group" aria-label="Weight units"><button class="chip" data-units="lboz" aria-pressed="${S.settings.units !== "kg"}">lb & oz</button><button class="chip" data-units="kg" aria-pressed="${S.settings.units === "kg"}">kg</button></div>
+    <button class="btn small" data-act="export">${I.dl} Export catches (CSV)</button></div></div>`;
+  h += `<div class="panel"><h3>Backup</h3><p class="hint" style="margin:0 0 10px">Your log is stored on this phone only. A backup file holds every catch and photo. Keep a copy in Google Drive or email it to yourself.${S.settings.lastBackup ? " Last backup: " + esc(fmtDate(S.settings.lastBackup)) + "." : ""}</p>
+    <div class="actions"><button class="btn small primary" data-act="backup">${I.dl} Back up now</button><button class="btn small" data-act="restore">Restore from a backup</button><input type="file" id="restore-file" accept=".json,application/json" class="sr" tabindex="-1" aria-hidden="true"></div>
+    <p class="hint" style="margin:10px 0 0">Bankside ${"1.0.0"} · runs on your phone · ${WX_CREDIT}</p></div>`;
+  return h;
+}
+
+/* ---------------------------------------------------------------- sheets */
+function openSheet({ title, body, foot = "", onMount, refresh }) {
+  const el = document.createElement("div");
+  el.className = "sheet"; el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true"); el.setAttribute("aria-label", title);
+  el.innerHTML = `<div class="sheet-head wrap"><div class="in"><button class="iconbtn" data-close aria-label="Back">${I.back}</button><h2>${esc(title)}</h2></div></div>
+    <div class="sheet-body"><div class="in wrap">${body}</div></div>${foot ? `<div class="sheet-foot wrap"><div class="in">${foot}</div></div>` : ""}`;
+  document.body.appendChild(el);
+  const entry = { el, refresh: null };
+  S.stack.push(entry);
+  el.addEventListener("click", e => { if (e.target.closest("[data-close]")) closeSheet(entry); });
+  if (onMount) onMount(el, entry);
+  if (refresh) { entry.refresh = () => { if (!document.body.contains(el)) return; const r = refresh(); if (r === false) closeSheet(entry); }; }
+  return entry;
+}
+function closeSheet(entry) {
+  const i = S.stack.indexOf(entry); if (i < 0) return;
+  S.stack.splice(i, 1); entry.el.remove(); if (entry.onClose) entry.onClose();
+}
+function setBody(entry, html) { $(".sheet-body .in", entry.el).innerHTML = html; }
+function armDelete(btn, fn) {
+  if (btn.dataset.armed) { fn(); return; }
+  btn.dataset.armed = "1"; btn.classList.add("armed"); const old = btn.textContent; btn.textContent = "Tap again to delete";
+  setTimeout(() => { if (!btn.isConnected) return; delete btn.dataset.armed; btn.classList.remove("armed"); btn.textContent = old; }, 4000);
+}
+
+/* ------------------------------------------------------------- db helpers */
+function dbErr(e) {
+  const c = e && e.code;
+  if (c === "quota_exceeded") return "Your log is full. Delete some old entries to add more.";
+  if (c === "invalid_argument") return "That couldn't be saved. Only the log's owner can add or change entries.";
+  if (c === "revoked" || c === "not_granted") return "Saving isn't available here any more. Reload the page.";
+  return "That didn't save. Check your signal and try again.";
+}
+async function write(fn) { try { return await fn(); } catch (e) { if (e && e.code === "unavailable") { await new Promise(r => setTimeout(r, 600 + Math.random() * 600)); return await fn(); } throw e; } }
+const col = name => S.db.collection(name);
+
+/* --------------------------------------------------------- conditions UI */
+function condFields(cond = {}, prefix = "c") {
+  const chipset = (name, opts, cur, icons) => `<div class="chips wrap" role="radiogroup" data-group="${prefix}-${name}">` +
+    opts.map(o => { const [k, l] = Array.isArray(o) ? o : [o, o]; return `<button type="button" class="chip" data-val="${esc(k)}" aria-pressed="${cur === k}">${icons ? I[k] : ""}${esc(l)}</button>`; }).join("") + `</div>`;
+  return `<fieldset><legend>Conditions</legend>
+    <div class="field"><span class="lab">Sky</span>${chipset("sky", SKY, cond.sky, true)}</div>
+    <div class="field"><span class="lab">Wind</span>${chipset("wind", WIND, cond.wind)}</div>
+    <div class="grid3">
+      <div class="field"><label for="${prefix}-dir">Wind from</label><select id="${prefix}-dir"><option value="">–</option>${DIRS.map(d => `<option ${cond.windDir === d ? "selected" : ""}>${d}</option>`).join("")}</select></div>
+      <div class="field"><label for="${prefix}-air">Air</label><div class="unit"><input id="${prefix}-air" type="text" inputmode="decimal" value="${cond.airC ?? ""}"><span>°C</span></div></div>
+      <div class="field"><label for="${prefix}-water">Water</label><div class="unit"><input id="${prefix}-water" type="text" inputmode="decimal" value="${cond.waterC ?? ""}"><span>°C</span></div></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><span class="lab">Water colour</span>${chipset("clarity", CLARITY, cond.clarity)}</div>
+      <div class="field"><span class="lab">Level</span>${chipset("level", LEVEL, cond.level)}</div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label for="${prefix}-pressure">Air pressure</label><div class="unit"><input id="${prefix}-pressure" type="text" inputmode="numeric" value="${cond.pressure ?? ""}"><span>mb</span></div></div>
+      <div class="field"><span class="lab">Pressure over 3 hours</span>${chipset("trend", ["Rising","Steady","Falling"], cond.trend)}</div>
+    </div>
+  </fieldset>`;
+}
+function wireChips(root) {
+  root.addEventListener("click", e => {
+    const b = e.target.closest("[data-group] .chip"); if (!b) return;
+    const g = b.closest("[data-group]"); const on = b.getAttribute("aria-pressed") === "true";
+    $$(".chip", g).forEach(x => x.setAttribute("aria-pressed", "false"));
+    if (!on) b.setAttribute("aria-pressed", "true");
+  });
+}
+function readCond(root, prefix = "c") {
+  const pick = n => $(`[data-group="${prefix}-${n}"] .chip[aria-pressed="true"]`, root)?.dataset.val || null;
+  const o = { sky: pick("sky"), wind: pick("wind"), windDir: $(`#${prefix}-dir`, root).value || null, airC: num($(`#${prefix}-air`, root).value), waterC: num($(`#${prefix}-water`, root).value), clarity: pick("clarity"), level: pick("level"), pressure: num($(`#${prefix}-pressure`, root).value), trend: pick("trend") };
+  for (const k in o) if (o[k] == null || o[k] === "") delete o[k];
+  return o;
+}
+function setCond(root, cond = {}, prefix = "c") {
+  for (const n of ["sky","wind","clarity","level","trend"]) $$(`[data-group="${prefix}-${n}"] .chip`, root).forEach(b => b.setAttribute("aria-pressed", String(b.dataset.val === cond[n])));
+  $(`#${prefix}-dir`, root).value = cond.windDir || ""; $(`#${prefix}-air`, root).value = cond.airC ?? ""; $(`#${prefix}-water`, root).value = cond.waterC ?? ""; $(`#${prefix}-pressure`, root).value = cond.pressure ?? "";
+}
+function venueOptions(sel) {
+  return `<option value="">No venue</option>` + [...S.venues].sort((a, b) => a.name.localeCompare(b.name)).map(v => `<option value="${esc(v.id)}" ${v.id === sel ? "selected" : ""}>${esc(v.name)}</option>`).join("") + `<option value="__new">Add a new venue…</option>`;
+}
+function nearestVenue(lat, lon) {
+  let best = null;
+  for (const v of S.venues) if (v.lat != null) { const d = haversineKm(lat, lon, v.lat, v.lon); if (!best || d < best.d) best = { v, d }; }
+  return best;
+}
+
+/* ------------------------------------------------------------ catch form */
+function openCatchForm(existing) {
+  if (S.status !== "ready") { toast("Your log isn't open yet."); return; }
+  const c = existing ? { ...existing } : { released: true, when: nowLocal() };
+  const F = { photos: (c.photos || []).map(id => ({ id, url: photoUrl(id) })), loc: c.lat != null ? { lat: c.lat, lon: c.lon, source: c.locSource || "saved" } : null, idCtl: null };
+  const recent = recentSpecies();
+  const isOther = c.species && !ALL_SPECIES.includes(c.species);
+  const kg = S.settings.units === "kg";
+  const lb = c.weightOz ? Math.floor(c.weightOz / 16) : "", oz = c.weightOz ? Math.round((c.weightOz - Math.floor(c.weightOz / 16) * 16) * 10) / 10 : "";
+  const body = `
+    <fieldset><legend>Photos</legend>
+      <div class="photos" id="f-photos"></div>
+      <div class="phbtns" id="f-phbtns"><button type="button" class="btn" id="f-cam">${I.camera} Take photo</button><button type="button" class="btn" id="f-lib">${I.image} Choose photo</button></div>
+      <input type="file" accept="image/*" capture="environment" id="f-file-cam" class="sr" tabindex="-1" aria-hidden="true">
+      <input type="file" accept="image/*" multiple id="f-file-lib" class="sr" tabindex="-1" aria-hidden="true">
+      <p class="hint" style="margin:0">If your phone saves location in photos, Bankside reads where and when the fish was caught from the first photo.</p>
+    </fieldset>
+    <fieldset><legend>Fish</legend>
+      ${recent.length ? `<div class="chips" id="f-recent" aria-label="Recent species">${recent.map(s => `<button type="button" class="chip" data-sp="${esc(s)}">${esc(s)}</button>`).join("")}</div>` : ""}
+      <div class="field"><label for="f-species">Species</label>
+        <select id="f-species"><option value="">Choose a species</option>${Object.entries(SPECIES).map(([g, l]) => `<optgroup label="${g}">${l.map(s => `<option ${c.species === s ? "selected" : ""}>${s}</option>`).join("")}</optgroup>`).join("")}<option value="__other" ${isOther ? "selected" : ""}>Other species…</option></select>
+      </div>
+      <div class="spref" id="f-spref" hidden></div>
+      <div class="field" id="f-other-w" ${isOther ? "" : "hidden"}><label for="f-other">Species name</label><input id="f-other" type="text" value="${isOther ? esc(c.species) : ""}" autocomplete="off"></div>
+      <div id="f-id-w" hidden><button type="button" class="btn small" id="f-id">${I.spark} Suggest species from photo</button><div class="idline" id="f-id-out" hidden style="margin-top:8px"></div></div>
+      ${kg ? `<div class="grid2 weight-big"><div class="field"><label for="f-kg">Weight</label><div class="unit"><input id="f-kg" type="text" inputmode="decimal" value="${c.weightOz ? (c.weightOz * 0.028349523).toFixed(2) : ""}"><span>kg</span></div></div>
+        <div class="field"><label for="f-len">Length</label><div class="unit"><input id="f-len" type="text" inputmode="decimal" value="${c.lengthCm ?? ""}"><span>cm</span></div></div></div>`
+      : `<div class="grid3 weight-big"><div class="field"><label for="f-lb">Pounds</label><div class="unit"><input id="f-lb" type="text" inputmode="numeric" value="${lb}"><span>lb</span></div></div>
+        <div class="field"><label for="f-oz">Ounces</label><div class="unit"><input id="f-oz" type="text" inputmode="decimal" value="${oz}"><span>oz</span></div></div>
+        <div class="field"><label for="f-len">Length</label><div class="unit"><input id="f-len" type="text" inputmode="decimal" value="${c.lengthCm ?? ""}"><span>cm</span></div></div></div>`}
+      <label class="toggle"><input type="checkbox" id="f-released" ${c.released !== false ? "checked" : ""}> Returned to the water</label>
+    </fieldset>
+    <fieldset><legend>Where and when</legend>
+      <div class="field"><label for="f-when">Caught at</label><input id="f-when" type="datetime-local" value="${esc(c.when || nowLocal())}"></div>
+      <div class="field"><label for="f-venue">Venue</label><select id="f-venue">${venueOptions(c.venueId)}</select></div>
+      <div class="field" id="f-newvenue-w" hidden><label for="f-newvenue">New venue name</label><input id="f-newvenue" type="text" autocomplete="off"><span class="hint">Saved with this catch's location, if it has one.</span></div>
+      <div class="field"><label for="f-peg">Peg or swim</label><input id="f-peg" type="text" value="${esc(c.peg || "")}"></div>
+      <div class="locline" id="f-loc"></div>
+      <button type="button" class="btn small" id="f-gps">${I.pin} Use my location</button>
+      <div class="field"><label for="f-coords">Paste a location</label><input id="f-coords" type="text" placeholder="53.6818, -1.4986 or a Google Maps link" autocomplete="off"><span class="hint">In Google Maps, press and hold the spot, then copy the numbers it shows.</span></div>
+    </fieldset>
+    <fieldset><legend>Tackle</legend>
+      <div class="field"><label for="f-method">Method</label><select id="f-method"><option value="">–</option>${METHODS.map(m => `<option ${c.method === m ? "selected" : ""}>${m}</option>`).join("")}${c.method && !METHODS.includes(c.method) ? `<option selected>${esc(c.method)}</option>` : ""}</select></div>
+      <div class="field"><label for="f-bait">Bait</label><input id="f-bait" type="text" value="${esc(c.bait || "")}" autocomplete="off">
+        <div class="chips" id="f-baits">${BAITS.map(b => `<button type="button" class="chip" data-bait="${b}">${b}</button>`).join("")}</div></div>
+      <div class="field"><label for="f-rig">Rig, hook, line</label><input id="f-rig" type="text" value="${esc(c.rig || "")}" placeholder="e.g. size 16, 4 lb hooklength"></div>
+    </fieldset>
+    <div class="wxrow"><button type="button" class="btn small" id="f-wx">${I.cloud} Fill in the weather</button><span class="hint" id="f-wx-note"></span></div>
+    <div id="f-cond">${condFields(c.cond || {})}</div>
+    <p class="hint" id="f-cond-note" style="margin:-8px 0 0"></p>
+    <div class="field"><label for="f-notes">Notes</label><textarea id="f-notes" placeholder="How it fought, where it came from, anything to remember">${esc(c.notes || "")}</textarea></div>`;
+  const foot = `${existing ? `<button class="btn danger" id="f-del">Delete</button>` : ""}<span class="grow"></span><button class="btn ghost" data-close>Cancel</button><button class="btn primary" id="f-save">Save catch</button>`;
+
+  openSheet({ title: existing ? "Edit catch" : "Log a catch", body, foot, onMount(el, entry) {
+    wireChips(el);
+    const condTouched = { v: !!existing };
+    $("#f-cond", el).addEventListener("click", e => { if (e.target.closest(".chip")) condTouched.v = true; });
+    $("#f-cond", el).addEventListener("input", () => condTouched.v = true);
+
+    const drawPhotos = () => {
+      const g = $("#f-photos", el);
+      g.innerHTML = F.photos.map((p, i) => `<div class="ph"><img src="${esc(p.url)}" alt="Photo ${i + 1}"><button type="button" data-rm="${i}" aria-label="Remove photo">${I.x}</button></div>`).join("");
+      g.hidden = !F.photos.length;
+      $("#f-phbtns", el).hidden = F.photos.length >= 3;
+      $("#f-lib", el).lastChild.textContent = F.photos.length ? " Add another" : " Choose photo";
+      $("#f-id-w", el).hidden = !(S.canIdentify && F.photos.length);
+    };
+    let drawLoc = () => {
+      const L = F.loc, box = $("#f-loc", el);
+      if (L) {
+        const src = { photo: "from the photo", gps: "from your phone's GPS" + (L.acc ? ` (within ${L.acc} m)` : ""), pasted: "pasted", venue: "the venue's location", saved: "saved" }[L.source] || "";
+        const near = nearestVenue(L.lat, L.lon);
+        box.innerHTML = `${I.pin}<div><b class="num">${L.lat.toFixed(5)}, ${L.lon.toFixed(5)}</b> <span class="muted">${src}</span>${near && near.d < 3 ? `<br><span class="muted">${near.d < 0.1 ? "At" : (near.d < 1 ? Math.round(near.d * 1000) + " m from" : near.d.toFixed(1) + " km from")} ${esc(near.v.name)}</span>` : ""}</div>`;
+      } else box.innerHTML = `${I.pin}<div class="muted">No location yet. It's taken from the photo or the venue, or you can paste one below.</div>`;
+    };
+    let wxKey = null;
+    const fillWx = async auto => {
+      const note = $("#f-wx-note", el);
+      if (!F.loc) { if (!auto) toast("Add a location first: a photo, your GPS or a venue"); return; }
+      if (auto && condTouched.v) return;
+      const when = $("#f-when", el).value || nowLocal();
+      const key = `${F.loc.lat.toFixed(3)},${F.loc.lon.toFixed(3)},${when.slice(0, 13)}`;
+      if (auto && key === wxKey) return;
+      wxKey = key;
+      if (!navigator.onLine) { note.textContent = "No signal, so no weather yet. Save the catch and fill it in later from its page."; return; }
+      note.innerHTML = `<span class="spin"></span> Looking up the weather…`;
+      try {
+        const w = await getWeather(F.loc.lat, F.loc.lon, when);
+        setCond(el, { ...readCond(el), ...w.cond });
+        note.innerHTML = `Filled in for ${w.hour} at this spot${w.windMph != null ? ` (wind ${Math.round(w.windMph)} mph)` : ""}. Add the water temperature yourself. ${WX_CREDIT}`;
+      } catch (er) { wxKey = null; note.textContent = "Couldn't get the weather just now. Fill it in yourself or try again."; }
+    };
+    const drawLoc0 = drawLoc;
+    drawLoc = () => { drawLoc0(); fillWx(true); };
+    drawPhotos(); drawLoc();
+    $("#f-wx", el).addEventListener("click", () => { wxKey = null; condTouched.v = false; fillWx(false); });
+    $("#f-gps", el).addEventListener("click", async () => {
+      const b = $("#f-gps", el); b.disabled = true; b.innerHTML = `<span class="spin"></span> Finding you…`;
+      try {
+        const g = await getGps(); F.loc = { lat: g.lat, lon: g.lon, acc: g.acc, source: "gps" };
+        const near = nearestVenue(g.lat, g.lon);
+        if (near && near.d < 2 && (!venueSel.value || venueSel.value === "__new")) { venueSel.value = near.v.id; onVenue(); }
+        drawLoc();
+      } catch (er) { toast(er && er.code === 1 ? "Location is blocked. Allow it for Bankside in Chrome's site settings." : "Couldn't get your location. Try again outside, away from trees."); }
+      finally { b.disabled = false; b.innerHTML = `${I.pin} Use my location`; }
+    });
+    // open the camera or library straight from the tap, so phones treat it as the user's own action
+    $("#f-cam", el).addEventListener("click", () => { const i = $("#f-file-cam", el); i.value = ""; i.click(); });
+    $("#f-lib", el).addEventListener("click", () => { const i = $("#f-file-lib", el); i.value = ""; i.click(); });
+
+    const venueSel = $("#f-venue", el);
+    const fillCondFromSession = () => {
+      const date = ($("#f-when", el).value || "").slice(0, 10), vid = venueSel.value;
+      const s = S.sessions.find(x => x.date === date && x.venueId === (vid && vid !== "__new" ? vid : null));
+      const note = $("#f-cond-note", el);
+      if (s && s.cond && !condTouched.v) { setCond(el, s.cond); note.textContent = "Conditions filled in from this session. Change them if they've moved on."; }
+      else note.textContent = s ? "Adds to your session at this venue on this day." : "";
+    };
+    const onVenue = () => {
+      $("#f-newvenue-w", el).hidden = venueSel.value !== "__new";
+      const v = venueById(venueSel.value);
+      if (v && v.lat != null && (!F.loc || F.loc.source === "venue")) { F.loc = { lat: v.lat, lon: v.lon, source: "venue" }; drawLoc(); }
+      fillCondFromSession();
+    };
+    venueSel.addEventListener("change", onVenue);
+    $("#f-when", el).addEventListener("change", () => { fillCondFromSession(); fillWx(true); });
+    if (!existing) {
+      // start from today's most recent session, if there is one
+      const today = nowLocal().slice(0, 10);
+      const s = [...S.sessions].filter(x => x.date === today).sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""))[0];
+      if (s && s.venueId) { venueSel.value = s.venueId; if (s.peg) $("#f-peg", el).value = s.peg; onVenue(); }
+      gpsAllowed().then(ok => { if (ok && (!F.loc || F.loc.source === "venue")) $("#f-gps", el).click(); });
+    } else fillCondFromSession();
+
+    const speciesSel = $("#f-species", el);
+    const drawRef = () => {
+      const sp = speciesSel.value, box = $("#f-spref", el), src = spPhoto(sp);
+      box.hidden = !src;
+      if (src) box.innerHTML = `<img src="${esc(src)}" alt="A ${esc(sp.toLowerCase())}"><div><b>${esc(sp)}</b><span class="hint">${creditLine(sp)}</span></div>`;
+    };
+    speciesSel.addEventListener("change", () => { $("#f-other-w", el).hidden = speciesSel.value !== "__other"; drawRef(); });
+    drawRef();
+    el.addEventListener("click", e => {
+      const sp = e.target.closest("[data-sp]"); if (sp) { speciesSel.value = sp.dataset.sp; $("#f-other-w", el).hidden = true; drawRef(); }
+      const bt = e.target.closest("[data-bait]"); if (bt) { const inp = $("#f-bait", el); const cur = inp.value.trim(); inp.value = cur ? (cur.toLowerCase().includes(bt.dataset.bait.toLowerCase()) ? cur : cur + ", " + bt.dataset.bait.toLowerCase()) : bt.dataset.bait; }
+      const rm = e.target.closest("[data-rm]"); if (rm) { const p = F.photos.splice(+rm.dataset.rm, 1)[0]; if (p && p.removedId === undefined && p.id) (F.removed ||= []).push(p.id); drawPhotos(); }
+    });
+    el.addEventListener("change", async e => {
+      if (e.target.id !== "f-file-cam" && e.target.id !== "f-file-lib") return;
+      const files = [...e.target.files].slice(0, 3 - F.photos.length);
+      for (const file of files) {
+        try {
+          let ex = null;
+          try { ex = readExif(await file.slice(0, 256 * 1024).arrayBuffer()); } catch (er) {}
+          const blob = await shrink(file);
+          F.photos.push({ blob, url: URL.createObjectURL(blob) });
+          if (F.photos.length === 1 && ex) {
+            if (ex.lat != null) {
+              F.loc = { lat: ex.lat, lon: ex.lon, source: "photo" };
+              const near = nearestVenue(ex.lat, ex.lon);
+              if (near && near.d < 2 && (!venueSel.value || venueSel.value === "__new")) { venueSel.value = near.v.id; onVenue(); }
+            }
+            if (ex.when && !existing) { $("#f-when", el).value = ex.when; fillCondFromSession(); }
+          }
+        } catch (er) { toast("That photo couldn't be opened. Try a JPEG, or take the photo again."); }
+      }
+      e.target.value = "";
+      drawPhotos(); drawLoc();
+      if (F.loc && F.loc.source === "photo") toast("Location read from the photo");
+    });
+    $("#f-coords", el).addEventListener("change", e => {
+      const p = parseCoords(e.target.value);
+      if (p) { F.loc = { ...p, source: "pasted" }; drawLoc(); const near = nearestVenue(p.lat, p.lon); if (near && near.d < 2 && !venueSel.value) { venueSel.value = near.v.id; onVenue(); } }
+      else if (e.target.value.trim()) toast("Couldn't find a location in that. Paste two numbers like 53.68, -1.49");
+    });
+
+    // species suggestion from the photo
+    $("#f-id", el)?.addEventListener("click", async () => {
+      const out = $("#f-id-out", el), btn = $("#f-id", el);
+      const p = F.photos[0]; if (!p) return;
+      out.hidden = false; out.innerHTML = `<span class="spin"></span> Looking at the photo…`; btn.disabled = true;
+      try {
+        const blob = p.blob || await (await fetch(p.url)).blob();
+        const list = ALL_SPECIES.join(", ");
+        const r = await S.sample.json(`This photo was taken by an angler in the UK and shows a fish they caught. Identify the fish. Choose only from this list: ${list}. If the fish isn't clear enough to tell, use "Unknown".\nReply with only JSON like {"species":"Perch","confidence":"high","reason":"Dark vertical bars, spiny dorsal fin, red pelvic fins"}. confidence is high, medium or low. Keep reason to one short sentence about the visible features.`, { images: [blob] });
+        const sp = r && typeof r.species === "string" ? r.species.trim() : "";
+        const match = ALL_SPECIES.find(s => s.toLowerCase() === sp.toLowerCase());
+        if (match) {
+          out.innerHTML = `Looks like <b>${esc(match)}</b> (${esc(r.confidence || "?")} confidence). ${esc(r.reason || "")} <button type="button" class="btn small" id="f-id-use" style="margin-top:6px">Use ${esc(match)}</button>`;
+          $("#f-id-use", el).onclick = () => { speciesSel.value = match; $("#f-other-w", el).hidden = true; out.hidden = true; drawRef(); };
+        } else out.textContent = "Couldn't tell the species from this photo. A side-on shot in good light works best.";
+      } catch (er) {
+        const code = er && er.code;
+        if (code === "not_granted" || code === "sampling_disabled" || code === "images_unavailable") { S.canIdentify = false; $("#f-id-w", el).hidden = true; toast("Species suggestions aren't available here."); }
+        else out.textContent = code === "rate_limited" ? "Too many requests just now. Try again in a minute." : "Couldn't check the photo just now. Try again.";
+      } finally { btn.disabled = false; }
+    });
+
+    $("#f-del", el)?.addEventListener("click", e => armDelete(e.currentTarget, async () => {
+      try { await write(() => col("catches").doc(existing.id).delete()); for (const id of existing.photos || []) S.assets?.delete(id).catch(() => {}); closeSheet(entry); for (const s of [...S.stack]) if (s.catchId === existing.id) closeSheet(s); toast("Catch deleted"); }
+      catch (er) { toast(dbErr(er)); }
+    }));
+
+    $("#f-save", el).addEventListener("click", async () => {
+      const btn = $("#f-save", el);
+      let species = speciesSel.value === "__other" ? $("#f-other", el).value.trim() : speciesSel.value;
+      if (!species) { toast("Choose a species first"); speciesSel.focus(); return; }
+      let weightOz = null;
+      if (kg) { const k = num($("#f-kg", el).value); if (k) weightOz = Math.round(k / 0.028349523 * 10) / 10; }
+      else { const l = num($("#f-lb", el).value) || 0, o = num($("#f-oz", el).value) || 0; if (l || o) weightOz = Math.round((l * 16 + o) * 10) / 10; }
+      if (!kg && num($("#f-oz", el).value) >= 16) { toast("Ounces go up to 15. Put whole pounds in the pounds box."); return; }
+      const when = $("#f-when", el).value || nowLocal();
+      btn.disabled = true; btn.innerHTML = `<span class="spin"></span> Saving`;
+      try {
+        // photos
+        const ids = [];
+        for (const p of F.photos) {
+          if (p.id) { ids.push(p.id); continue; }
+          if (!S.assets) { toast("Photos can't be stored from this view, so the catch was saved without them."); break; }
+          const up = await S.assets.upload(p.blob, { type: "image/jpeg" });
+          p.id = up.id; ids.push(up.id);
+        }
+        // venue
+        let venueId = venueSel.value || null, vName = null;
+        if (venueId === "__new") {
+          const name = $("#f-newvenue", el).value.trim();
+          if (!name) { venueId = null; }
+          else {
+            const vref = col("venues").doc(uid());
+            const v = { name, createdAt: new Date().toISOString() };
+            if (F.loc) { v.lat = F.loc.lat; v.lon = F.loc.lon; }
+            await write(() => vref.set(v)); venueId = vref.id; vName = name;
+          }
+        }
+        if (venueId) vName = vName || venueById(venueId)?.name || null;
+        const cond = readCond(el);
+        // session: one per day per venue
+        const date = when.slice(0, 10);
+        let s = S.sessions.find(x => x.date === date && (x.venueId || null) === venueId);
+        const peg = $("#f-peg", el).value.trim();
+        if (!s) {
+          const sref = col("sessions").doc(uid());
+          const sdoc = { date, venueId, venueName: vName, peg: peg || null, start: fmtTime(when) || null, cond, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+          await write(() => sref.set(sdoc)); s = { id: sref.id, ...sdoc };
+        } else if (Object.keys(cond).length && JSON.stringify(cond) !== JSON.stringify(s.cond || {})) {
+          await write(() => col("sessions").doc(s.id).update({ cond, updatedAt: new Date().toISOString() }));
+        }
+        const doc = {
+          species, weightOz, lengthCm: num($("#f-len", el).value), released: $("#f-released", el).checked, when,
+          venueId, venueName: vName, sessionId: s.id, peg: peg || null,
+          method: $("#f-method", el).value || null, bait: $("#f-bait", el).value.trim() || null, rig: $("#f-rig", el).value.trim() || null,
+          cond, notes: $("#f-notes", el).value.trim() || null, photos: ids,
+          lat: F.loc ? F.loc.lat : null, lon: F.loc ? F.loc.lon : null, locSource: F.loc ? F.loc.source : null,
+          createdAt: existing?.createdAt || new Date().toISOString(), updatedAt: new Date().toISOString()
+        };
+        if (existing?.example) doc.example = true;
+        const ref = existing ? col("catches").doc(existing.id) : col("catches").doc(uid());
+        const prevPb = pbMap()[species];
+        await write(() => ref.set(doc));
+        for (const id of F.removed || []) S.assets?.delete(id).catch(() => {});
+        closeSheet(entry);
+        const isPb = !!(weightOz && prevPb && prevPb.id !== existing?.id && weightOz > prevPb.weightOz);
+        toast(isPb ? `New ${species} PB: ${fmtWeight(weightOz)}` : existing ? "Catch updated" : "Catch saved");
+      } catch (er) {
+        const code = er && er.code;
+        toast(code === "too_large" ? "That photo is too big to store." : code === "quota_or_state" ? "Photo storage is full. Delete some old catches with photos." : dbErr(er));
+        btn.disabled = false; btn.textContent = "Save catch";
+      }
+    });
+  }});
+}
+
+/* ---------------------------------------------------------- catch detail */
+function catchDetailHtml(c) {
+  const pbs = pbMap(); const isPb = pbs[c.species] && pbs[c.species].id === c.id;
+  const d = parseLocal(c.when);
+  const lat = c.lat ?? venueById(c.venueId)?.lat, lon = c.lon ?? venueById(c.venueId)?.lon;
+  const sun = d && lat != null ? sunTimes(d, lat, lon) : null; const moon = d ? moonPhase(d) : null;
+  const cond = c.cond || {}; const sky = SKY.find(s => s[0] === cond.sky);
+  const f = (k, v, full) => v ? `<div class="${full ? "full" : ""}"><dt>${k}</dt><dd>${v}</dd></div>` : "";
+  return `<div class="hero">${(c.photos || []).length ? c.photos.map((id, i) => `<img src="${esc(photoUrl(id))}" alt="${esc(c.species)}, photo ${i + 1}">`).join("") : spPhoto(c.species) ? `<figure class="refhero"><img src="${esc(spPhoto(c.species))}" alt="A ${esc(c.species.toLowerCase())}"><figcaption>${creditLine(c.species)}. Add your own photo with Edit.</figcaption></figure>` : `<div class="ph-empty">${I.fishbig}</div>`}</div>
+    <div class="big-title"><h3>${esc(c.species)}</h3><span class="num">${esc(fmtWeight(c.weightOz)) || "Not weighed"}</span></div>
+    <div class="badges" style="margin-top:-10px">${isPb ? '<span class="badge pb">Personal best</span>' : ""}${c.example ? '<span class="badge ex">Example</span>' : ""}${c.released === false ? '<span class="badge">Retained</span>' : '<span class="badge">Returned</span>'}</div>
+    <dl class="facts" style="margin:0">
+      ${f("Caught", esc(fmtDate(c.when)) + (fmtTime(c.when) ? " · " + fmtTime(c.when) : ""), true)}
+      ${f("Venue", c.venueId ? `<a href="#" data-open-venue="${esc(c.venueId)}" style="color:inherit">${esc(venueName(c))}</a>` : esc(venueName(c)))}
+      ${f("Peg / swim", esc(c.peg))}
+      ${f("Length", c.lengthCm ? `<span class="num">${c.lengthCm} cm</span>` : "")}
+      ${f("Method", esc(c.method))}
+      ${f("Bait", esc(c.bait))}
+      ${f("Rig", esc(c.rig), true)}
+      ${f("Sky", sky ? sky[1] : "")}
+      ${f("Wind", [cond.wind, cond.windDir ? "from " + cond.windDir : ""].filter(Boolean).join(" "))}
+      ${f("Air / water", [cond.airC != null ? cond.airC + "°C air" : "", cond.waterC != null ? cond.waterC + "°C water" : ""].filter(Boolean).join(", "))}
+      ${f("Water", [cond.clarity, cond.level ? "level " + cond.level.toLowerCase() : ""].filter(Boolean).join(", "))}
+      ${f("Pressure", cond.pressure ? `<span class="num">${cond.pressure} mb</span>${cond.trend ? ", " + cond.trend.toLowerCase() : ""}` : "")}
+      ${f("Sunrise / sunset", sun ? `<span class="num">${fmtClock(sun.rise)} / ${fmtClock(sun.set)}</span>` : "")}
+      ${f("Moon", moon ? `${moon.name}, ${moon.illum}% lit` : "")}
+      ${f("Location", lat != null ? `<a href="${esc(mapsUrl(lat, lon))}" target="_blank" rel="noopener" style="color:inherit"><span class="num">${lat.toFixed(4)}, ${lon.toFixed(4)}</span></a>` : "", true)}
+      ${f("Notes", esc(c.notes), true)}
+    </dl>
+    ${lat != null && !c.cond?.airC && !c.cond?.sky ? `<div class="banner"><p>No weather saved for this catch.</p><button class="btn small" data-act="wx">${I.cloud} Look it up</button></div>` : ""}
+    <div class="actions"><button class="btn primary" data-act="card">${I.image} Make catch card</button><button class="btn" data-act="edit">${I.edit} Edit</button>${c.sessionId && sessionById(c.sessionId) ? `<button class="btn" data-open-session="${esc(c.sessionId)}">${I.cal} Session</button>` : ""}</div>`;
+}
+function openCatch(id) {
+  const c0 = S.catches.find(x => x.id === id); if (!c0) return;
+  const entry = openSheet({ title: c0.species, body: catchDetailHtml(c0), onMount(el) {
+    el.addEventListener("click", e => {
+      const c = S.catches.find(x => x.id === id); if (!c) return;
+      const a = e.target.closest("[data-act]"); if (!a) return;
+      if (a.dataset.act === "edit") openCatchForm(c);
+      if (a.dataset.act === "card") openCatchCard(c);
+      if (a.dataset.act === "wx") {
+        const lat = c.lat ?? venueById(c.venueId)?.lat, lon = c.lon ?? venueById(c.venueId)?.lon;
+        a.disabled = true; a.innerHTML = `<span class="spin"></span> Looking up`;
+        getWeather(lat, lon, c.when).then(w => write(() => col("catches").doc(c.id).update({ cond: { ...(c.cond || {}), ...w.cond } }))).then(() => toast("Weather added"))
+          .catch(() => { a.disabled = false; a.textContent = "Try again"; toast(navigator.onLine ? "Couldn't get the weather just now." : "No signal. Try again when you're back online."); });
+      }
+    });
+  }, refresh() { const c = S.catches.find(x => x.id === id); if (!c) return false; setBody(entry, catchDetailHtml(c)); $(".sheet-head h2", entry.el).textContent = c.species; } });
+  entry.catchId = id;
+}
+
+/* ------------------------------------------------------------ catch card */
+async function drawCatchCard(c) {
+  const W = 1080, H = 1350, cv = document.createElement("canvas"); cv.width = W; cv.height = H; const g = cv.getContext("2d");
+  try { await Promise.all([document.fonts.load('700 120px "Bricolage Grotesque"'), document.fonts.load('600 60px "JetBrains Mono"'), document.fonts.load('500 40px "Figtree"')]); } catch (e) {}
+  let img = null;
+  if (c.photos && c.photos[0]) { try { const r = await fetch(photoUrl(c.photos[0])); if (r.ok) img = await loadBitmap(await r.blob()); } catch (e) {} }
+  if (img) {
+    const k = Math.max(W / img.width, H / img.height), w = img.width * k, h = img.height * k;
+    g.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+  } else {
+    const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, "#1D5852"); gr.addColorStop(1, "#0E1412"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+    g.save(); g.translate(W / 2 - 300, 470); g.scale(9, 9); g.fillStyle = "rgba(255,255,255,.14)"; g.fill(new Path2D("M4 18c8-12 26-15 40-6l12-8-3 14 3 14-12-8C30 33 12 30 4 18z")); g.restore();
+  }
+  const sh = g.createLinearGradient(0, H * 0.45, 0, H); sh.addColorStop(0, "rgba(8,14,12,0)"); sh.addColorStop(0.55, "rgba(8,14,12,.72)"); sh.addColorStop(1, "rgba(8,14,12,.92)");
+  g.fillStyle = sh; g.fillRect(0, H * 0.45, W, H * 0.55);
+  const tg = g.createLinearGradient(0, 0, 0, 200); tg.addColorStop(0, "rgba(8,14,12,.55)"); tg.addColorStop(1, "rgba(8,14,12,0)"); g.fillStyle = tg; g.fillRect(0, 0, W, 200);
+  const X = 72;
+  // float mark + brand
+  g.fillStyle = "#FF6B35"; g.fillRect(X, 64, 10, 40); g.fillStyle = "#fff"; g.beginPath(); g.moveTo(X - 2, 150); g.lineTo(X + 1, 104); g.lineTo(X + 9, 104); g.lineTo(X + 12, 150); g.closePath(); g.fill();
+  g.font = '600 34px "Figtree", system-ui, sans-serif'; g.fillStyle = "rgba(255,255,255,.92)"; g.textBaseline = "alphabetic"; g.fillText("Bankside", X + 34, 118);
+  const pbs = pbMap(); const isPb = pbs[c.species] && pbs[c.species].id === c.id;
+  if (isPb) { g.font = '700 30px "Figtree", sans-serif'; const t = "PERSONAL BEST", tw = g.measureText(t).width + 44; g.fillStyle = "#FF6B35"; roundRect(g, W - X - tw, 74, tw, 56, 28); g.fill(); g.fillStyle = "#1A0D07"; g.fillText(t, W - X - tw + 22, 113); }
+  // text block from the bottom up
+  let y = H - 78;
+  g.fillStyle = "rgba(255,255,255,.78)"; g.font = '500 34px "Figtree", system-ui, sans-serif';
+  const line3 = [c.method, c.bait].filter(Boolean).join(" · ");
+  const line2 = [venueName(c) !== "No venue" ? venueName(c) : "", c.peg ? "Peg " + c.peg : "", fmtDate(c.when)].filter(Boolean).join("  ·  ");
+  if (line3) { g.fillText(fit(g, line3, W - 2 * X), X, y); y -= 52; }
+  g.fillStyle = "rgba(255,255,255,.92)"; g.fillText(fit(g, line2, W - 2 * X), X, y); y -= 70;
+  const wt = fmtWeight(c.weightOz);
+  if (wt) { g.font = '600 92px "JetBrains Mono", ui-monospace, monospace'; g.fillStyle = "#FF6B35"; g.fillText(wt, X, y); y -= 112; }
+  let fs = 132; g.font = `700 ${fs}px "Bricolage Grotesque", system-ui, sans-serif`;
+  while (g.measureText(c.species).width > W - 2 * X && fs > 70) { fs -= 6; g.font = `700 ${fs}px "Bricolage Grotesque", system-ui, sans-serif`; }
+  g.fillStyle = "#fff"; g.fillText(c.species, X - 4, y);
+  return await new Promise((ok, no) => { try { cv.toBlob(b => b ? ok(b) : no(new Error("encode")), "image/jpeg", 0.92); } catch (e) { no(e); } });
+}
+function roundRect(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+function fit(g, s, w) { if (g.measureText(s).width <= w) return s; while (s.length > 4 && g.measureText(s + "…").width > w) s = s.slice(0, -1); return s + "…"; }
+function openCatchCard(c) {
+  const entry = openSheet({ title: "Catch card", body: `<div class="empty"><span class="spin"></span><p>Making your card…</p></div>`,
+    foot: `<span class="grow"></span><button class="btn ghost" data-close>Close</button><button class="btn" id="cc-save" disabled>${I.dl} Save</button><button class="btn primary" id="cc-share" disabled>Share</button>` });
+  let blob = null;
+  drawCatchCard(c).then(b => {
+    blob = b;
+    setBody(entry, `<img class="cardprev" src="${URL.createObjectURL(b)}" alt="Catch card for ${esc(c.species)}"><p class="hint" style="margin:0">Share sends it straight to WhatsApp, Facebook or a text. Save puts it in your Downloads.</p>`);
+    $("#cc-save", entry.el).disabled = false; $("#cc-share", entry.el).disabled = false;
+  }).catch(() => setBody(entry, `<div class="empty"><h3>Couldn't make the card</h3><p>The photo didn't load. Check your signal and try again.</p></div>`));
+  $("#cc-share", entry.el).addEventListener("click", async () => {
+    if (!blob) return;
+    const name = `${c.species.replace(/[^A-Za-z0-9]+/g, "-")}-${(c.when || "").slice(0, 10)}.jpg`.toLowerCase();
+    try { if (!(await shareFile(name, blob, `${c.species}${c.weightOz ? ", " + fmtWeight(c.weightOz) : ""}`))) { await S.downloads.save({ filename: name, data: blob }); toast("Sharing isn't available, so the image was saved instead"); } }
+    catch (e) { if (e && e.name !== "AbortError") toast("Couldn't share the image."); }
+  });
+  $("#cc-save", entry.el)?.addEventListener("click", async () => {
+    if (!blob) return;
+    const name = `${c.species.replace(/[^A-Za-z0-9]+/g, "-")}-${(c.when || "").slice(0, 10)}.jpg`.toLowerCase();
+    try { const r = await S.downloads.save({ filename: name, data: blob }); if (r.status === "saved") toast("Image saved"); }
+    catch (e) { if (e.code !== "declined") toast(e.code === "rate_limited" ? "One moment, a save is already open." : "Saving isn't available here. Press and hold the image instead."); }
+  });
+}
+
+/* ------------------------------------------------------------- sessions */
+function sessionDetailHtml(s) {
+  const st = sessionStats(s); const d = parseLocal(s.date); const v = venueById(s.venueId);
+  const sun = d && v && v.lat != null ? sunTimes(d, v.lat, v.lon) : null; const moon = d ? moonPhase(new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12)) : null;
+  const cond = s.cond || {}; const sky = SKY.find(x => x[0] === cond.sky); const pbs = pbMap();
+  const f = (k, val, full) => val ? `<div class="${full ? "full" : ""}"><dt>${k}</dt><dd>${val}</dd></div>` : "";
+  return `<div class="big-title"><h3>${esc(venueName(s))}</h3><span class="num">${st.n} fish</span></div>
+    <p class="muted" style="margin:-10px 0 0">${esc(fmtDate(s.date))}${s.start ? " · " + esc(s.start) : ""}${s.end ? " to " + esc(s.end) : ""}${s.peg ? " · peg " + esc(s.peg) : ""}</p>
+    <dl class="facts" style="margin:0">
+      ${f("Total weight", st.total ? `<span class="num">${esc(fmtWeight(st.total))}</span>` : "")}
+      ${f("Best fish", st.cs.length ? (() => { const b = st.cs.reduce((a, c) => (c.weightOz || 0) > (a.weightOz || 0) ? c : a); return b.weightOz ? esc(b.species + " " + fmtWeight(b.weightOz)) : ""; })() : "")}
+      ${f("Sky", sky ? sky[1] : "")}
+      ${f("Wind", [cond.wind, cond.windDir ? "from " + cond.windDir : ""].filter(Boolean).join(" "))}
+      ${f("Air / water", [cond.airC != null ? cond.airC + "°C air" : "", cond.waterC != null ? cond.waterC + "°C water" : ""].filter(Boolean).join(", "))}
+      ${f("Water", [cond.clarity, cond.level ? "level " + cond.level.toLowerCase() : ""].filter(Boolean).join(", "))}
+      ${f("Pressure", cond.pressure ? `<span class="num">${cond.pressure} mb</span>${cond.trend ? ", " + cond.trend.toLowerCase() : ""}` : "")}
+      ${f("Sunrise / sunset", sun ? `<span class="num">${fmtClock(sun.rise)} / ${fmtClock(sun.set)}</span>` : "")}
+      ${f("Moon", moon ? `${moon.name}, ${moon.illum}% lit` : "")}
+      ${f("Method", esc(s.method))}${f("Bait & feed", esc(s.bait))}
+      ${f("What worked, next time", esc(s.notes), true)}
+    </dl>
+    <div class="actions"><button class="btn" data-act="edit-session">${I.edit} Edit session</button><button class="btn primary" data-act="add-to-session">${I.plus} Log a catch here</button></div>
+    <div class="section-h"><h2>Catches</h2></div>
+    ${st.cs.length ? `<div class="list">${st.cs.sort((a, b) => (a.when || "").localeCompare(b.when || "")).map(c => catchCard(c, pbs)).join("")}</div>` : `<p class="muted" style="margin:0">Nothing logged for this session yet.</p>`}`;
+}
+function openSession(id) {
+  const s0 = sessionById(id); if (!s0) return;
+  const entry = openSheet({ title: fmtDate(s0.date), body: sessionDetailHtml(s0), onMount(el) {
+    el.addEventListener("click", e => {
+      const s = sessionById(id); if (!s) return;
+      const a = e.target.closest("[data-act]"); if (!a) return;
+      if (a.dataset.act === "edit-session") openSessionForm(s);
+      if (a.dataset.act === "add-to-session") { openCatchForm(null); const top = S.stack[S.stack.length - 1].el; const v = $("#f-venue", top); if (v && s.venueId) { v.value = s.venueId; v.dispatchEvent(new Event("change")); } $("#f-when", top).value = s.date + "T" + (fmtTime(nowLocal())); $("#f-when", top).dispatchEvent(new Event("change")); if (s.peg) $("#f-peg", top).value = s.peg; }
+    });
+  }, refresh() { const s = sessionById(id); if (!s) return false; setBody(entry, sessionDetailHtml(s)); } });
+}
+function openSessionForm(existing) {
+  if (S.status !== "ready") return;
+  const s = existing ? { ...existing } : { date: nowLocal().slice(0, 10), start: fmtTime(nowLocal()) };
+  const body = `<fieldset><legend>Trip</legend>
+      <div class="grid3"><div class="field" style="grid-column:span 1"><label for="s-date">Date</label><input id="s-date" type="date" value="${esc(s.date)}"></div>
+      <div class="field"><label for="s-start">Start</label><input id="s-start" type="time" value="${esc(s.start || "")}"></div>
+      <div class="field"><label for="s-end">Finish</label><input id="s-end" type="time" value="${esc(s.end || "")}"></div></div>
+      <div class="field"><label for="s-venue">Venue</label><select id="s-venue">${venueOptions(s.venueId)}</select></div>
+      <div class="field" id="s-newvenue-w" hidden><label for="s-newvenue">New venue name</label><input id="s-newvenue" type="text"></div>
+      <div class="field"><label for="s-peg">Peg or swim</label><input id="s-peg" type="text" value="${esc(s.peg || "")}"></div>
+    </fieldset>
+    ${condFields(s.cond || {}, "sc")}
+    <fieldset><legend>Approach</legend>
+      <div class="field"><label for="s-method">Method</label><input id="s-method" type="text" value="${esc(s.method || "")}"></div>
+      <div class="field"><label for="s-bait">Bait & feed</label><input id="s-bait" type="text" value="${esc(s.bait || "")}"></div>
+      <div class="field"><label for="s-notes">What worked, next time</label><textarea id="s-notes">${esc(s.notes || "")}</textarea></div>
+    </fieldset>`;
+  const foot = `${existing ? `<button class="btn danger" id="s-del">Delete</button>` : ""}<span class="grow"></span><button class="btn ghost" data-close>Cancel</button><button class="btn primary" id="s-save">Save session</button>`;
+  openSheet({ title: existing ? "Edit session" : "New session", body, foot, onMount(el, entry) {
+    wireChips(el);
+    $("#s-venue", el).addEventListener("change", e => $("#s-newvenue-w", el).hidden = e.target.value !== "__new");
+    $("#s-del", el)?.addEventListener("click", e => armDelete(e.currentTarget, async () => {
+      try { await write(() => col("sessions").doc(existing.id).delete()); closeSheet(entry); for (const x of [...S.stack]) if (x.refresh) x.refresh(); toast("Session deleted. Its catches are still in your log."); } catch (er) { toast(dbErr(er)); }
+    }));
+    $("#s-save", el).addEventListener("click", async () => {
+      const btn = $("#s-save", el); btn.disabled = true;
+      try {
+        let venueId = $("#s-venue", el).value || null, vName = null;
+        if (venueId === "__new") { const name = $("#s-newvenue", el).value.trim(); if (name) { const r = col("venues").doc(uid()); await write(() => r.set({ name, createdAt: new Date().toISOString() })); venueId = r.id; vName = name; } else venueId = null; }
+        if (venueId) vName = vName || venueById(venueId)?.name || null;
+        const doc = { date: $("#s-date", el).value || nowLocal().slice(0, 10), start: $("#s-start", el).value || null, end: $("#s-end", el).value || null, venueId, venueName: vName, peg: $("#s-peg", el).value.trim() || null,
+          cond: readCond(el, "sc"), method: $("#s-method", el).value.trim() || null, bait: $("#s-bait", el).value.trim() || null, notes: $("#s-notes", el).value.trim() || null,
+          createdAt: existing?.createdAt || new Date().toISOString(), updatedAt: new Date().toISOString() };
+        if (existing?.example) doc.example = true;
+        const ref = existing ? col("sessions").doc(existing.id) : col("sessions").doc(uid());
+        await write(() => ref.set(doc));
+        closeSheet(entry); toast(existing ? "Session updated" : "Session started");
+      } catch (er) { toast(dbErr(er)); btn.disabled = false; }
+    });
+  }});
+}
+
+/* --------------------------------------------------------------- venues */
+function venueDetailHtml(v) {
+  const cs = S.catches.filter(c => c.venueId === v.id), ss = S.sessions.filter(s => s.venueId === v.id);
+  const pbs = {}; for (const c of cs) if (c.weightOz && (!pbs[c.species] || c.weightOz > pbs[c.species].weightOz)) pbs[c.species] = c;
+  const sp = countBy(cs, "species");
+  const f = (k, val, full) => val ? `<div class="${full ? "full" : ""}"><dt>${k}</dt><dd>${val}</dd></div>` : "";
+  return `<div class="big-title"><h3>${esc(v.name)}</h3><span class="num">${cs.length} fish</span></div>
+    <dl class="facts" style="margin:0">
+      ${f("Sessions", String(ss.length))}${f("Club / ticket", esc(v.club))}
+      ${f("Location", v.lat != null ? `<a href="${esc(mapsUrl(v.lat, v.lon))}" target="_blank" rel="noopener" style="color:inherit"><span class="num">${v.lat.toFixed(4)}, ${v.lon.toFixed(4)}</span></a>` : "Not set", true)}
+      ${f("Notes", esc(v.notes), true)}
+    </dl>
+    <div class="actions"><button class="btn" data-act="edit-venue">${I.edit} Edit venue</button>${v.lat != null ? `<a class="btn" href="${esc(mapsUrl(v.lat, v.lon))}" target="_blank" rel="noopener">${I.pin} Open in Maps</a>` : ""}</div>
+    ${sp.length ? `<div class="panel"><h3>Species here</h3>${hbars(sp.slice(0, 8), sp[0][1])}</div>` : ""}
+    ${Object.keys(pbs).length ? `<div class="panel"><h3>Best fish here</h3><table class="table"><tbody>${Object.values(pbs).sort((a, b) => b.weightOz - a.weightOz).map(c => `<tr data-open-catch="${esc(c.id)}" data-open><td>${esc(c.species)}</td><td class="r num">${esc(fmtWeight(c.weightOz))}</td><td class="r">${esc(fmtShort(c.when))}</td></tr>`).join("")}</tbody></table></div>` : ""}`;
+}
+function openVenue(id) {
+  const v0 = venueById(id); if (!v0) return;
+  const entry = openSheet({ title: v0.name, body: venueDetailHtml(v0), onMount(el) {
+    el.addEventListener("click", e => { const a = e.target.closest('[data-act="edit-venue"]'); if (a) openVenueForm(venueById(id)); });
+  }, refresh() { const v = venueById(id); if (!v) return false; setBody(entry, venueDetailHtml(v)); $(".sheet-head h2", entry.el).textContent = v.name; } });
+}
+function openVenueForm(existing) {
+  if (S.status !== "ready") return;
+  const v = existing ? { ...existing } : {};
+  const body = `<fieldset><legend>Venue</legend>
+      <div class="field"><label for="v-name">Name</label><input id="v-name" type="text" value="${esc(v.name || "")}" placeholder="Lake, pond, stretch of river"></div>
+      <div class="field"><label for="v-club">Club, ticket or day-ticket price</label><input id="v-club" type="text" value="${esc(v.club || "")}"></div>
+      <div class="field"><label for="v-coords">Location</label><input id="v-coords" type="text" value="${v.lat != null ? v.lat.toFixed(5) + ", " + v.lon.toFixed(5) : ""}" placeholder="53.6818, -1.4986 or a Google Maps link"><button type="button" class="btn small" id="v-gps" style="margin-top:6px;align-self:flex-start">${I.pin} Use my location</button><span class="hint">Stand at the venue and tap Use my location, or paste numbers from Google Maps. Bankside uses this to match catches to the venue.</span></div>
+      <div class="field"><label for="v-notes">Notes</label><textarea id="v-notes" placeholder="Depths, snags, best pegs, parking, rules">${esc(v.notes || "")}</textarea></div>
+    </fieldset>`;
+  const foot = `${existing ? `<button class="btn danger" id="v-del">Delete</button>` : ""}<span class="grow"></span><button class="btn ghost" data-close>Cancel</button><button class="btn primary" id="v-save">Save venue</button>`;
+  openSheet({ title: existing ? "Edit venue" : "Add venue", body, foot, onMount(el, entry) {
+    $("#v-del", el)?.addEventListener("click", e => armDelete(e.currentTarget, async () => {
+      try { await write(() => col("venues").doc(existing.id).delete()); closeSheet(entry); for (const x of [...S.stack]) if (x.refresh) x.refresh(); toast("Venue deleted. Catches keep the venue name."); } catch (er) { toast(dbErr(er)); }
+    }));
+    $("#v-gps", el).addEventListener("click", async () => {
+      const b = $("#v-gps", el); b.disabled = true;
+      try { const g = await getGps(); $("#v-coords", el).value = `${g.lat.toFixed(5)}, ${g.lon.toFixed(5)}`; toast(`Location set (within ${g.acc} m)`); }
+      catch (er) { toast("Couldn't get your location."); } finally { b.disabled = false; }
+    });
+    $("#v-save", el).addEventListener("click", async () => {
+      const name = $("#v-name", el).value.trim(); if (!name) { toast("Give the venue a name"); return; }
+      const raw = $("#v-coords", el).value.trim(); const p = parseCoords(raw);
+      if (raw && !p) { toast("Couldn't find a location in that. Paste two numbers like 53.68, -1.49"); return; }
+      const btn = $("#v-save", el); btn.disabled = true;
+      try {
+        const doc = { name, club: $("#v-club", el).value.trim() || null, notes: $("#v-notes", el).value.trim() || null, lat: p ? p.lat : null, lon: p ? p.lon : null, createdAt: existing?.createdAt || new Date().toISOString(), updatedAt: new Date().toISOString() };
+        if (existing?.example) doc.example = true;
+        const ref = existing ? col("venues").doc(existing.id) : col("venues").doc(uid());
+        await write(() => ref.set(doc)); closeSheet(entry); toast("Venue saved");
+      } catch (er) { toast(dbErr(er)); btn.disabled = false; }
+    });
+  }});
+}
+
+/* --------------------------------------------------------- species guide */
+function speciesHtml(sp) {
+  const cs = S.catches.filter(c => c.species === sp).sort((a, b) => (b.weightOz || 0) - (a.weightOz || 0));
+  const src = spPhoto(sp), pb = cs.find(c => c.weightOz > 0);
+  const baits = countBy(cs, "bait").slice(0, 3).map(x => x[0]).join(", ");
+  const vens = countBy(cs, c => venueName(c)).slice(0, 3).map(x => x[0]).join(", ");
+  const f = (k, v) => v ? `<div><dt>${k}</dt><dd>${v}</dd></div>` : "";
+  return `${src ? `<figure class="refhero"><img src="${esc(src)}" alt="A ${esc(sp.toLowerCase())}"><figcaption>${creditLine(sp)}</figcaption></figure>` : `<div class="hero"><div class="ph-empty">${I.fishbig}</div></div><p class="hint" style="margin:0">No openly licensed photo of a ${esc(sp.toLowerCase())} was available.</p>`}
+    <div class="big-title"><h3>${esc(sp)}</h3><span class="num">${cs.length} caught</span></div>
+    ${cs.length ? `<dl class="facts" style="margin:0">${f("Personal best", pb ? `<span class="num">${esc(fmtWeight(pb.weightOz))}</span>` : "")}${f("Last caught", esc(fmtDate([...cs].sort((a, b) => (b.when || "").localeCompare(a.when || ""))[0].when)))}${f("Best baits", esc(baits))}${f("Where", esc(vens))}</dl>
+      <div class="list">${cs.slice(0, 10).map(c => catchCard(c, pbMap())).join("")}</div>` : `<p class="muted" style="margin:0">You haven't logged a ${esc(sp.toLowerCase())} yet.</p>`}`;
+}
+function openSpecies(sp) {
+  const entry = openSheet({ title: sp, body: speciesHtml(sp), refresh() { setBody(entry, speciesHtml(sp)); } });
+}
+function checklistHtml() {
+  const st = checklistState();
+  const row = sp => {
+    const logged = st.logged[sp] !== undefined, ticked = !!st.ticked[sp], src = spPhoto(sp), id = "cl-" + sp.replace(/[^A-Za-z0-9]/g, "");
+    const note = logged ? `Logged${st.logged[sp] ? " · first " + esc(fmtShort(st.logged[sp])) + " " + esc(st.logged[sp].slice(0, 4)) : ""}` : ticked ? "Caught before Bankside" : "Not caught yet";
+    return `<label class="cl-row ${logged || ticked ? "on" : ""}" for="${id}">
+      <input type="checkbox" id="${id}" data-tick="${esc(sp)}" ${logged || ticked ? "checked" : ""} ${logged ? "disabled" : ""}>
+      ${src ? `<img src="${esc(src)}" alt="" loading="lazy">` : `<span class="cl-none">${I.fish}</span>`}
+      <span class="cl-txt"><b>${esc(sp)}</b><span>${note}</span></span></label>`;
+  };
+  const groups = Object.entries(SPECIES).map(([g, list]) => {
+    const n = list.filter(sp => st.done.includes(sp)).length;
+    return `<section class="cl-group"><div class="section-h"><h2>${g}</h2><span class="num muted">${n} / ${list.length}</span></div><div class="cl-list">${list.map(row).join("")}</div></section>`;
+  }).join("");
+  const other = st.others.length ? `<section class="cl-group"><div class="section-h"><h2>Other species</h2><span class="num muted">${st.others.length}</span></div><div class="cl-list">${st.others.map(row).join("")}</div></section>` : "";
+  return `<div class="cl-head"><b class="num">${st.done.length}<span> / ${st.all.length}</span></b><span>species caught</span><div class="meter"><i style="width:${Math.round(st.done.length / st.all.length * 100)}%"></i></div></div>
+    <p class="hint" style="margin:0">Species you log are ticked for you. Tick any others you've caught before you started using Bankside.</p>
+    <div class="chips" role="group" aria-label="Show"><button class="chip" data-clf="all" aria-pressed="${clFilter === "all"}">All</button><button class="chip" data-clf="todo" aria-pressed="${clFilter === "todo"}">Still to catch</button><button class="chip" data-clf="done" aria-pressed="${clFilter === "done"}">Caught</button></div>
+    <div class="cl-body" data-show="${clFilter}">${groups}${other}</div>`;
+}
+let clFilter = "all";
+function openChecklist() {
+  const entry = openSheet({ title: "Species checklist", body: checklistHtml(), onMount(el) {
+    el.addEventListener("change", e => {
+      const cb = e.target.closest("[data-tick]"); if (!cb) return;
+      const ticked = { ...(S.settings.ticked || {}) };
+      if (cb.checked) ticked[cb.dataset.tick] = true; else delete ticked[cb.dataset.tick];
+      saveSettings({ ticked }); render();
+    });
+    el.addEventListener("click", e => { const f = e.target.closest("[data-clf]"); if (f) { clFilter = f.dataset.clf; setBody(entry, checklistHtml()); } });
+  }, refresh() { const y = $(".sheet-body", entry.el).scrollTop; setBody(entry, checklistHtml()); $(".sheet-body", entry.el).scrollTop = y; } });
+}
+function openCredits() {
+  const rows = ALL_SPECIES.map(sp => { const p = PHOTOS[sp];
+    return p ? `<tr><td><b>${esc(sp)}</b><br><a href="${esc(p.page)}" target="_blank" rel="noopener" class="hint">${esc(p.title)}</a></td><td>${esc(p.author || "Unknown author")}<br><a href="${esc(p.license_url || p.page)}" target="_blank" rel="noopener" class="hint">${esc(p.license)}</a></td></tr>`
+      : `<tr><td><b>${esc(sp)}</b></td><td class="muted">No photo</td></tr>`; }).join("");
+  openSheet({ title: "Photo credits", body: `<p class="hint" style="margin:0">The reference photos come from Wikimedia Commons. Each is shared under the Creative Commons licence named here, or is in the public domain. They are shown unchanged apart from resizing. Tap a file name to see the original and its full licence details. ${WX_CREDIT}.</p><div class="scrollx"><table class="table"><tbody>${rows}</tbody></table></div>` });
+}
+
+/* -------------------------------------------------------------- licences */
+function openLicences() {
+  const rows = (S.settings.licences || []).length ? S.settings.licences : [{ name: "EA rod licence", expires: "" }, { name: "Club book", expires: "" }];
+  const row = (l, i) => `<div class="grid2" data-lic="${i}"><div class="field"><label for="l-n${i}">Name</label><input id="l-n${i}" type="text" value="${esc(l.name)}"></div><div class="field"><label for="l-d${i}">Runs out</label><input id="l-d${i}" type="date" value="${esc(l.expires || "")}"></div></div>`;
+  openSheet({ title: "Licences & tickets", body: `<p class="hint" style="margin:0">Bankside shows a reminder on the Catches page 30 days before each one runs out. An EA rod licence lasts 12 months from the day it starts.</p><div id="lic-rows" style="display:flex;flex-direction:column;gap:12px">${rows.map(row).join("")}</div><button class="btn small" id="lic-add" type="button">${I.plus} Add another</button>`,
+    foot: `<span class="grow"></span><button class="btn ghost" data-close>Cancel</button><button class="btn primary" id="lic-save">Save</button>`,
+    onMount(el, entry) {
+      let n = rows.length;
+      $("#lic-add", el).onclick = () => { $("#lic-rows", el).insertAdjacentHTML("beforeend", row({ name: "", expires: "" }, n++)); };
+      $("#lic-save", el).onclick = async () => {
+        const licences = $$("[data-lic]", el).map(r => ({ name: $("input[type=text]", r).value.trim(), expires: $("input[type=date]", r).value || null })).filter(l => l.name);
+        try { await write(() => S.db.doc("settings/main").set({ ...S.settings, licences })); closeSheet(entry); toast("Saved"); } catch (er) { toast(dbErr(er)); }
+      };
+    } });
+}
+
+/* ---------------------------------------------------------------- export */
+async function exportCsv() {
+  const cols = ["date","time","species","weight_lb","weight_oz","weight_kg","length_cm","venue","peg","method","bait","rig","sky","wind","wind_from","air_c","water_c","water_colour","level","pressure_mb","pressure_trend","returned","lat","lon","notes"];
+  const q = v => { const s = String(v ?? ""); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const rows = [...S.catches].sort((a, b) => (a.when || "").localeCompare(b.when || "")).map(c => {
+    const oz = c.weightOz || 0, cd = c.cond || {};
+    return [(c.when || "").slice(0, 10), fmtTime(c.when), c.species, oz ? Math.floor(oz / 16) : "", oz ? Math.round((oz % 16) * 10) / 10 : "", oz ? (oz * 0.028349523).toFixed(3) : "", c.lengthCm ?? "", venueName(c), c.peg, c.method, c.bait, c.rig, (SKY.find(s => s[0] === cd.sky) || [])[1], cd.wind, cd.windDir, cd.airC, cd.waterC, cd.clarity, cd.level, cd.pressure, cd.trend, c.released === false ? "no" : "yes", c.lat, c.lon, c.notes].map(q).join(",");
+  });
+  try { const r = await S.downloads.save({ filename: `bankside-catches-${nowLocal().slice(0, 10)}.csv`, data: [cols.join(","), ...rows].join("\n") }); if (r.status === "saved") toast("Exported"); }
+  catch (e) { if (e.code !== "declined") toast("Export isn't available here."); }
+}
+
+/* ------------------------------------------------------------- examples */
+async function clearExamples() {
+  try {
+    for (const c of S.catches.filter(x => x.example)) await write(() => col("catches").doc(c.id).delete());
+    for (const s of S.sessions.filter(x => x.example)) await write(() => col("sessions").doc(s.id).delete());
+    for (const v of S.venues.filter(x => x.example)) await write(() => col("venues").doc(v.id).delete());
+    toast("Examples removed. Your log is ready.");
+  } catch (e) { toast(dbErr(e)); }
+}
+
+/* ---------------------------------------------------------------- backup */
+async function doBackup(btn) {
+  if (btn) btn.disabled = true;
+  try {
+    const text = await makeBackup();
+    await S.downloads.save({ filename: `bankside-backup-${nowLocal().slice(0, 10)}.json`, data: text });
+    await saveSettings({ lastBackup: nowLocal().slice(0, 10) });
+    toast("Backup saved to Downloads");
+  } catch (e) { toast("The backup didn't save. Try again."); }
+  finally { if (btn) btn.disabled = false; }
+}
+document.addEventListener("change", async e => {
+  if (e.target.id !== "restore-file" || !e.target.files[0]) return;
+  const file = e.target.files[0];
+  let text; try { text = await file.text(); const j = JSON.parse(text); if (j.app !== "bankside") throw 0; } catch (er) { toast("That file isn't a Bankside backup."); return; }
+  const j = JSON.parse(text);
+  openSheet({ title: "Restore backup", body: `<p style="margin:0">This backup from <b>${esc(fmtDate((j.exported || "").slice(0, 10)) || "an unknown date")}</b> has ${(j.catches || []).length} catch${(j.catches || []).length === 1 ? "" : "es"} and ${Object.keys(j.photos || {}).length} photo${Object.keys(j.photos || {}).length === 1 ? "" : "s"}.</p><p class="hint" style="margin:0">Restoring replaces everything on this phone with the backup.</p>`,
+    foot: `<span class="grow"></span><button class="btn ghost" data-close>Cancel</button><button class="btn danger" id="rs-go">Replace and restore</button>`,
+    onMount(el, entry) { $("#rs-go", el).onclick = async () => { const b = $("#rs-go", el); b.disabled = true; b.innerHTML = `<span class="spin"></span> Restoring`; try { await restoreBackup(text); closeSheet(entry); toast("Backup restored"); } catch (er) { toast("Restore failed. Your log may be incomplete, so try again."); b.disabled = false; b.textContent = "Replace and restore"; } }; } });
+});
+document.getElementById("install")?.addEventListener("click", async () => { if (!installEvt) return; installEvt.prompt(); await installEvt.userChoice; installEvt = null; document.getElementById("install").hidden = true; });
+
+/* --------------------------------------------------------------- events */
+document.addEventListener("click", e => {
+  const t = e.target;
+  const tab = t.closest("[data-tab]"); if (tab) { S.view = tab.dataset.tab; S.filter = null; try { localStorage.setItem("bankside.view", S.view); } catch (er) {} render(); window.scrollTo(0, 0); return; }
+  const oc = t.closest("[data-open-catch]"); if (oc) { e.preventDefault(); openCatch(oc.dataset.openCatch); return; }
+  const os = t.closest("[data-open-session]"); if (os) { e.preventDefault(); openSession(os.dataset.openSession); return; }
+  const ov = t.closest("[data-open-venue]"); if (ov) { e.preventDefault(); openVenue(ov.dataset.openVenue); return; }
+  const gd = t.closest("[data-guide]"); if (gd) { openSpecies(gd.dataset.guide); return; }
+  const fl = t.closest("[data-filter]"); if (fl) { S.filter = fl.dataset.filter || null; render(); return; }
+  const un = t.closest("[data-units]"); if (un && S.db) { const units = un.dataset.units; S.settings.units = units; render(); write(() => S.db.doc("settings/main").set({ ...S.settings, units })).catch(er => toast(dbErr(er))); return; }
+  const a = t.closest("[data-act]"); if (!a || a.closest(".sheet")) return;
+  const act = a.dataset.act;
+  if (act === "new-catch") openCatchForm(null);
+  else if (act === "new-session") openSessionForm(null);
+  else if (act === "new-venue") openVenueForm(null);
+  else if (act === "licences") openLicences();
+  else if (act === "export") exportCsv();
+  else if (act === "credits") openCredits();
+  else if (act === "backup") doBackup(a);
+  else if (act === "restore") { const i = $("#restore-file"); i.value = ""; i.click(); }
+  else if (act === "checklist") openChecklist();
+  else if (act === "clear-examples") { if (a.dataset.armed) clearExamples(); else { a.dataset.armed = "1"; a.textContent = "Tap again to remove"; setTimeout(() => { if (a.isConnected) { delete a.dataset.armed; a.textContent = "Remove examples"; } }, 4000); } }
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape" && S.stack.length) closeSheet(S.stack[S.stack.length - 1]); });
+
+/* ----------------------------------------------------------------- boot */
+render();
+(async () => {
+  try { await IDB.open(); } catch (e) { S.status = "broken"; render(); return; }
+  S.db = LocalDB; S.assets = LocalAssets; S.downloads = LocalDownloads; S.sample = null; S.isOwner = true;
+  try { if (navigator.storage && navigator.storage.persist) S.persisted = await navigator.storage.persist(); } catch (e) {}
+  const done = () => { if (S.loaded.catches && S.loaded.sessions && S.loaded.venues && S.status === "connecting") { S.status = "ready"; } render(); };
+  const db = S.db;
+  db.collection("catches").onSnapshot(async s => { S.catches = s.docs.map(d => ({ id: d.id, ...d.data() })); await loadPhotoUrls(S.catches.flatMap(c => c.photos || [])); S.loaded.catches = true; done(); });
+  db.collection("sessions").onSnapshot(s => { S.sessions = s.docs.map(d => ({ id: d.id, ...d.data() })); S.loaded.sessions = true; done(); });
+  db.collection("venues").onSnapshot(s => { S.venues = s.docs.map(d => ({ id: d.id, ...d.data() })); S.loaded.venues = true; done(); });
+  db.doc("settings/main").onSnapshot(d => { S.settings = d.exists ? { units: "lboz", licences: [], ...d.data() } : { units: "lboz", licences: [] }; render(); });
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+})();
+})();
+</script>
+
+</body>
+</html>
