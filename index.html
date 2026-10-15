@@ -223,16 +223,16 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;
 .cardprev{width:100%;max-width:100%;border-radius:var(--r);box-shadow:var(--shadow)}
 
 .spref{display:flex;gap:12px;align-items:center;padding:8px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
-.spref img{width:112px;aspect-ratio:3/2;object-fit:cover;border-radius:8px;flex:none;max-width:100%}
+.spref img{width:112px;aspect-ratio:3/2;object-fit:contain;background:var(--water-soft);border-radius:8px;flex:none;max-width:100%}
 .spref div{min-width:0;display:flex;flex-direction:column;gap:2px}
 .spref .hint a,.refhero figcaption a{color:inherit}
 .refhero{margin:0;width:100%;display:flex;flex-direction:column;gap:6px}
-.refhero img{width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:var(--r);background:var(--sunk);max-width:100%}
+.refhero img{width:100%;aspect-ratio:16/9;object-fit:contain;border-radius:var(--r);background:var(--water-soft);padding:8px;max-width:100%}
 .refhero figcaption{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
-.thumb img.ref{filter:saturate(.85)}
+.thumb img.ref{object-fit:contain;padding:4px}
 .guide{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px}
 .gtile{display:flex;flex-direction:column;gap:2px;text-align:left;background:none;border:0;padding:0;min-width:0}
-.gtile img,.gtile .gnone{width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:10px;background:var(--water-soft);display:grid;place-items:center;color:var(--water);max-width:100%}
+.gtile img,.gtile .gnone{width:100%;aspect-ratio:3/2;object-fit:contain;padding:4px;border-radius:10px;background:var(--water-soft);display:grid;place-items:center;color:var(--water);max-width:100%}
 .gtile .gnone svg{width:46px;height:26px}
 .gtile b{font-size:14px;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .gtile span{font-size:12px;color:var(--muted)}
@@ -251,7 +251,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;
 .cl-row{display:flex;align-items:center;gap:12px;padding:8px 12px;border-bottom:1px solid var(--line);cursor:pointer;min-height:60px}
 .cl-row:last-child{border-bottom:0}
 .cl-row input{width:24px;height:24px;flex:none;accent-color:var(--accent)}
-.cl-row img,.cl-row .cl-none{width:66px;aspect-ratio:3/2;object-fit:cover;border-radius:6px;flex:none;background:var(--water-soft);display:grid;place-items:center;color:var(--water);max-width:100%}
+.cl-row img,.cl-row .cl-none{width:66px;aspect-ratio:3/2;object-fit:contain;border-radius:6px;flex:none;background:var(--water-soft);display:grid;place-items:center;color:var(--water);max-width:100%}
 .cl-row .cl-none svg{width:30px;height:18px}
 .cl-row:not(.on) img{filter:grayscale(.85);opacity:.7}
 .cl-txt{display:flex;flex-direction:column;min-width:0}
@@ -299,11 +299,10 @@ const SPECIES = {
 };
 const ALL_SPECIES = Object.values(SPECIES).flat();
 /* Reference photos of each species, from Wikimedia Commons. Each is Creative Commons or public domain; credits shown in the app. */
-const PHOTOS = {"Roach":{"file":"roach.jpg","title":"Rutilus rutilus by Algirdas cropped.jpg","page":"https://commons.wikimedia.org/wiki/File:Rutilus_rutilus_by_Algirdas_cropped.jpg","author":"Algirdas; cropped by George Chernilevsky","license":"CC BY-SA 3.0","license_url":"http://creativecommons.org/licenses/by-sa/3.0/"},"Rudd":{"file":"rudd.jpg","title":"Scardinius erythropthalmus 2009 G1.jpg","page":"https://commons.wikimedia.org/wiki/File:Scardinius_erythropthalmus_2009_G1.jpg","author":"George Chernilevsky","license":"Public domain","license_url":""},"Perch":{"file":"perch.jpg","title":"Perca fluviatilis 2008 G1.jpg","page":"https://commons.wikimedia.org/wiki/File:Perca_fluviatilis_2008_G1.jpg","author":"George Chernilevsky","license":"Public domain","license_url":""},"Bream":{"file":"bream.jpg","title":"Bronze coloured Abramis brama.jpg","page":"https://commons.wikimedia.org/wiki/File:Bronze_coloured_Abramis_brama.jpg","author":"Piet Spaans (viridiflavus)","license":"CC BY-SA 2.5","license_url":"https://creativecommons.org/licenses/by-sa/2.5"},"Skimmer bream":{"file":"skimmer-bream.jpg","title":"Abramis brama (Seine river).jpg","page":"https://commons.wikimedia.org/wiki/File:Abramis_brama_(Seine_river).jpg","author":"Nervurax Fishing","license":"CC BY-SA 4.0","license_url":"https://creativecommons.org/licenses/by-sa/4.0"},"Silver bream":{"file":"silver-bream.jpg","title":"Blicca bjoerkna Hungary.jpg","page":"https://commons.wikimedia.org/wiki/File:Blicca_bjoerkna_Hungary.jpg","author":"Harka, Akos","license":"CC BY 3.0","license_url":"https://creativecommons.org/licenses/by/3.0"},"Roach x bream hybrid":{"file":"roach-x-bream-hybrid.jpg","title":"Rutilus Rutilus x Abramis Brama.jpg","page":"https://commons.wikimedia.org/wiki/File:Rutilus_Rutilus_x_Abramis_Brama.jpg","author":"Jam123","license":"CC0","license_url":"http://creativecommons.org/publicdomain/zero/1.0/deed.en"},"Common carp":{"file":"common-carp.jpg","title":"Cyprinus carpio 358609762.jpg","page":"https://commons.wikimedia.org/wiki/File:Cyprinus_carpio_358609762.jpg","author":"Fishes of Texas team","license":"CC BY-SA 4.0","license_url":"https://creativecommons.org/licenses/by-sa/4.0"},"Mirror carp":{"file":"mirror-carp.jpg","title":"Mirror carp 2008 G1.jpg","page":"https://commons.wikimedia.org/wiki/File:Mirror_carp_2008_G1.jpg","author":"George Chernilevsky","license":"CC BY-SA 3.0","license_url":"https://creativecommons.org/licenses/by-sa/3.0"},"Crucian carp":{"file":"crucian-carp.jpg","title":"Cyprinidae Carassius carassius 1.jpg","page":"https://commons.wikimedia.org/wiki/File:Cyprinidae_Carassius_carassius_1.jpg","author":"NasserHalaweh","license":"CC BY-SA 4.0","license_url":"https://creativecommons.org/licenses/by-sa/4.0"},"Grass carp":{"file":"grass-carp.jpg","title":"Ctenopharyngodon idella 2.jpg","page":"https://commons.wikimedia.org/wiki/File:Ctenopharyngodon_idella_2.jpg","author":"Harka, Akos","license":"CC BY 3.0","license_url":"https://creativecommons.org/licenses/by/3.0"},"Tench":{"file":"tench.jpg","title":"Tinca tinca Prague Vltava 2.jpg","page":"https://commons.wikimedia.org/wiki/File:Tinca_tinca_Prague_Vltava_2.jpg","author":"Karelj","license":"Public domain","license_url":""},"Chub":{"file":"chub.jpg","title":"Squalius cephalus I.jpg","page":"https://commons.wikimedia.org/wiki/File:Squalius_cephalus_I.jpg","author":"Pohled 111","license":"CC BY-SA 4.0","license_url":"https://creativecommons.org/licenses/by-sa/4.0"},"Dace":{"file":"dace.jpg","title":"Leuciscus leuciscus Hungary.jpg","page":"https://commons.wikimedia.org/wiki/File:Leuciscus_leuciscus_Hungary.jpg","author":"Akos Harka","license":"CC BY 3.0","license_url":"https://creativecommons.org/licenses/by/3.0"},"Barbel":{"file":"barbel.jpg","title":"Barbel.jpg","page":"https://commons.wikimedia.org/wiki/File:Barbel.jpg","author":"Neil Phillips from uk","license":"CC BY 2.0","license_url":"https://creativecommons.org/licenses/by/2.0"},"Ide":{"file":"ide.jpg","title":"LeuciscusIdusWindeIde56cm 21-4-2009 16-46-58.JPG","page":"https://commons.wikimedia.org/wiki/File:LeuciscusIdusWindeIde56cm_21-4-2009_16-46-58.JPG","author":"Viridiflavus","license":"CC BY-SA 3.0","license_url":"https://creativecommons.org/licenses/by-sa/3.0"},"Gudgeon":{"file":"gudgeon.jpg","title":"Gobio gobio img 33568.jpg","page":"https://commons.wikimedia.org/wiki/File:Gobio_gobio_img_33568.jpg","author":"Pmau","license":"CC BY-SA 4.0","license_url":"https://creativecommons.org/licenses/by-sa/4.0"},"Bleak":{"file":"bleak.jpg","title":"Alburnus alburnus Hungary.jpg","page":"https://commons.wikimedia.org/wiki/File:Alburnus_alburnus_Hungary.jpg","author":"Harka, Akos","license":"CC BY 3.0","license_url":"https://creativecommons.org/licenses/by/3.0"},"Ruffe":{"file":"ruffe.jpg","title":"Gymnocephalus cernuus Pärnu River Estonia 2010-01-06.jpg","page":"https://commons.wikimedia.org/wiki/File:Gymnocephalus_cernuus_P%C3%A4rnu_River_Estonia_2010-01-06.jpg","author":"Tiit Hunt","license":"CC BY-SA 3.0","license_url":"https://creativecommons.org/licenses/by-sa/3.0"},"Eel":{"file":"eel.jpg","title":"Anguille d'Europe (Anguilla anguilla) (Ifremer 00673-78548).jpg","page":"https://commons.wikimedia.org/wiki/File:Anguille_d%27Europe_(Anguilla_anguilla)_(Ifremer_00673-78548).jpg","author":"Damien Delaunay","license":"CC BY 4.0","license_url":"https://creativecommons.org/licenses/by/4.0"},"Minnow":{"file":"minnow.jpg","title":"Phoxinus phoxinus img 33486.jpg","page":"https://commons.wikimedia.org/wiki/File:Phoxinus_phoxinus_img_33486.jpg","author":"Pmau","license":"CC BY-SA 4.0","license_url":"https://creativecommons.org/licenses/by-sa/4.0"},"Pike":{"file":"pike.jpg","title":"Esox lucius (no).JPG","page":"https://commons.wikimedia.org/wiki/File:Esox_lucius_(no).JPG","author":"Arnstein Rønning","license":"CC BY-SA 4.0","license_url":"https://creativecommons.org/licenses/by-sa/4.0"},"Zander":{"file":"zander.jpg","title":"Sander lucioperca Hungary.jpg","page":"https://commons.wikimedia.org/wiki/File:Sander_lucioperca_Hungary.jpg","author":"Harka, Akos","license":"CC BY 3.0","license_url":"https://creativecommons.org/licenses/by/3.0"},"Wels catfish":{"file":"wels-catfish.jpg","title":"Silurus glanis Linnaeus, 1758 2599925104.jpg","page":"https://commons.wikimedia.org/wiki/File:Silurus_glanis_Linnaeus,_1758_2599925104.jpg","author":"Naturalis Biodiversity Center","license":"CC0","license_url":"http://creativecommons.org/publicdomain/zero/1.0/deed.en"},"Leather carp":{"file":"leather-carp.jpg","title":"Carpe cuir dordogne.jpg","page":"https://commons.wikimedia.org/wiki/File:Carpe_cuir_dordogne.jpg","author":"Orochimarant","license":"CC BY-SA 4.0","license_url":"https://creativecommons.org/licenses/by-sa/4.0"},"Rainbow trout":{"file":"rainbow-trout.jpg","title":"Female Rainbow Trout in hand.JPG","page":"https://commons.wikimedia.org/wiki/File:Female_Rainbow_Trout_in_hand.JPG","author":"Mike Anderson","license":"CC BY-SA 3.0","license_url":"https://creativecommons.org/licenses/by-sa/3.0"},"Brown trout":{"file":"brown-trout.jpg","title":"Salmo trutta fario Portugal.jpg","page":"https://commons.wikimedia.org/wiki/File:Salmo_trutta_fario_Portugal.jpg","author":"João Carrola","license":"CC BY 3.0","license_url":"https://creativecommons.org/licenses/by/3.0"},"Grayling":{"file":"grayling.jpg","title":"Thymallus thymallus acqMilano.jpg","page":"https://commons.wikimedia.org/wiki/File:Thymallus_thymallus_acqMilano.jpg","author":"Marrabbio2","license":"CC BY-SA 3.0","license_url":"https://creativecommons.org/licenses/by-sa/3.0"},"Salmon":{"file":"salmon.jpg","title":"Atlantischer Lachs.jpg","page":"https://commons.wikimedia.org/wiki/File:Atlantischer_Lachs.jpg","author":"Hartley, William W.","license":"Public domain","license_url":""},"Sea trout":{"file":"sea-trout.jpg","title":"Salmo trutta trutta 1879.jpg","page":"https://commons.wikimedia.org/wiki/File:Salmo_trutta_trutta_1879.jpg","author":"William Houghton (text), A. F. Lydon (illustration), 1879","license":"Public domain","license_url":""}};
+const PHOTOS = Object.fromEntries(ALL_SPECIES.map(sp => [sp, { file: sp.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + ".svg" }]));
 const spPhoto = sp => PHOTOS[sp] ? "fish/" + PHOTOS[sp].file : null;
 function creditLine(sp) {
-  const p = PHOTOS[sp]; if (!p) return "";
-  return `Reference photo: ${p.author ? esc(p.author) + ", " : ""}<a href="${esc(p.license_url || p.page)}" target="_blank" rel="noopener">${esc(p.license)}</a>, via <a href="${esc(p.page)}" target="_blank" rel="noopener">Wikimedia Commons</a>`;
+  return PHOTOS[sp] ? "Drawing made for Bankside" : "";
 }
 const METHODS = ["Waggler","Stick float","Pole","Feeder","Method feeder","Pellet feeder","Ledger","Bomb","Hair rig","Zig rig","Surface","Free-lining","Lure","Deadbait","Livebait","Fly"];
 const BAITS = ["Maggot","Caster","Worm","Pellet","Sweetcorn","Bread","Boilie","Hemp","Luncheon meat","Paste","Groundbait","Prawn"];
@@ -817,7 +816,7 @@ function viewRecords() {
   }
   // licences + settings
   const lic = S.settings.licences || [];
-  h += `<div class="panel"><div class="section-h" style="margin-bottom:10px"><h3 style="margin:0">Species guide</h3><button class="btn small ghost" data-act="credits">Photo credits</button></div><div class="guide">` +
+  h += `<div class="panel"><div class="section-h" style="margin-bottom:10px"><h3 style="margin:0">Species guide</h3><button class="btn small ghost" data-act="credits">Credits</button></div><div class="guide">` +
     ALL_SPECIES.map(sp => { const n = S.catches.filter(c => c.species === sp).length; const src = spPhoto(sp);
       return `<button class="gtile" data-guide="${esc(sp)}">${src ? `<img src="${esc(src)}" alt="" loading="lazy">` : `<span class="gnone">${I.fish}</span>`}<b>${esc(sp)}</b><span>${n ? n + " logged" : (S.settings.ticked || {})[sp] ? "Caught before" : "Not yet"}</span></button>`; }).join("") + `</div></div>`;
   h += `<div class="panel"><h3>Licences & tickets</h3>` +
@@ -828,7 +827,7 @@ function viewRecords() {
     <button class="btn small" data-act="export">${I.dl} Export catches (CSV)</button></div></div>`;
   h += `<div class="panel"><h3>Backup</h3><p class="hint" style="margin:0 0 10px">Your log is stored on this phone only. A backup file holds every catch and photo. Keep a copy in Google Drive or email it to yourself.${S.settings.lastBackup ? " Last backup: " + esc(fmtDate(S.settings.lastBackup)) + "." : ""}</p>
     <div class="actions"><button class="btn small primary" data-act="backup">${I.dl} Back up now</button><button class="btn small" data-act="restore">Restore from a backup</button><input type="file" id="restore-file" accept=".json,application/json" class="sr" tabindex="-1" aria-hidden="true"></div>
-    <p class="hint" style="margin:10px 0 0">Bankside ${"1.0.0"} · runs on your phone · ${WX_CREDIT}</p></div>`;
+    <p class="hint" style="margin:10px 0 0">Bankside ${"1.1.0"} · runs on your phone · ${WX_CREDIT}</p></div>`;
   return h;
 }
 
@@ -1055,7 +1054,7 @@ function openCatchForm(existing) {
     const drawRef = () => {
       const sp = speciesSel.value, box = $("#f-spref", el), src = spPhoto(sp);
       box.hidden = !src;
-      if (src) box.innerHTML = `<img src="${esc(src)}" alt="A ${esc(sp.toLowerCase())}"><div><b>${esc(sp)}</b><span class="hint">${creditLine(sp)}</span></div>`;
+      if (src) box.innerHTML = `<img src="${esc(src)}" alt="A ${esc(sp.toLowerCase())}"><div><b>${esc(sp)}</b><span class="hint">Check your fish against the drawing</span></div>`;
     };
     speciesSel.addEventListener("change", () => { $("#f-other-w", el).hidden = speciesSel.value !== "__other"; drawRef(); });
     drawRef();
@@ -1197,7 +1196,7 @@ function catchDetailHtml(c) {
   const sun = d && lat != null ? sunTimes(d, lat, lon) : null; const moon = d ? moonPhase(d) : null;
   const cond = c.cond || {}; const sky = SKY.find(s => s[0] === cond.sky);
   const f = (k, v, full) => v ? `<div class="${full ? "full" : ""}"><dt>${k}</dt><dd>${v}</dd></div>` : "";
-  return `<div class="hero">${(c.photos || []).length ? c.photos.map((id, i) => `<img src="${esc(photoUrl(id))}" alt="${esc(c.species)}, photo ${i + 1}">`).join("") : spPhoto(c.species) ? `<figure class="refhero"><img src="${esc(spPhoto(c.species))}" alt="A ${esc(c.species.toLowerCase())}"><figcaption>${creditLine(c.species)}. Add your own photo with Edit.</figcaption></figure>` : `<div class="ph-empty">${I.fishbig}</div>`}</div>
+  return `<div class="hero">${(c.photos || []).length ? c.photos.map((id, i) => `<img src="${esc(photoUrl(id))}" alt="${esc(c.species)}, photo ${i + 1}">`).join("") : spPhoto(c.species) ? `<figure class="refhero"><img src="${esc(spPhoto(c.species))}" alt="A ${esc(c.species.toLowerCase())}"><figcaption>No photo of this catch yet. Add one with Edit.</figcaption></figure>` : `<div class="ph-empty">${I.fishbig}</div>`}</div>
     <div class="big-title"><h3>${esc(c.species)}</h3><span class="num">${esc(fmtWeight(c.weightOz)) || "Not weighed"}</span></div>
     <div class="badges" style="margin-top:-10px">${isPb ? '<span class="badge pb">Personal best</span>' : ""}${c.example ? '<span class="badge ex">Example</span>' : ""}${c.released === false ? '<span class="badge">Retained</span>' : '<span class="badge">Returned</span>'}</div>
     <dl class="facts" style="margin:0">
@@ -1442,7 +1441,7 @@ function speciesHtml(sp) {
   const baits = countBy(cs, "bait").slice(0, 3).map(x => x[0]).join(", ");
   const vens = countBy(cs, c => venueName(c)).slice(0, 3).map(x => x[0]).join(", ");
   const f = (k, v) => v ? `<div><dt>${k}</dt><dd>${v}</dd></div>` : "";
-  return `${src ? `<figure class="refhero"><img src="${esc(src)}" alt="A ${esc(sp.toLowerCase())}"><figcaption>${creditLine(sp)}</figcaption></figure>` : `<div class="hero"><div class="ph-empty">${I.fishbig}</div></div><p class="hint" style="margin:0">No openly licensed photo of a ${esc(sp.toLowerCase())} was available.</p>`}
+  return `${src ? `<figure class="refhero"><img src="${esc(src)}" alt="A ${esc(sp.toLowerCase())}"></figure>` : `<div class="hero"><div class="ph-empty">${I.fishbig}</div></div><p class="hint" style="margin:0">No openly licensed photo of a ${esc(sp.toLowerCase())} was available.</p>`}
     <div class="big-title"><h3>${esc(sp)}</h3><span class="num">${cs.length} caught</span></div>
     ${cs.length ? `<dl class="facts" style="margin:0">${f("Personal best", pb ? `<span class="num">${esc(fmtWeight(pb.weightOz))}</span>` : "")}${f("Last caught", esc(fmtDate([...cs].sort((a, b) => (b.when || "").localeCompare(a.when || ""))[0].when)))}${f("Best baits", esc(baits))}${f("Where", esc(vens))}</dl>
       <div class="list">${cs.slice(0, 10).map(c => catchCard(c, pbMap())).join("")}</div>` : `<p class="muted" style="margin:0">You haven't logged a ${esc(sp.toLowerCase())} yet.</p>`}`;
@@ -1483,10 +1482,7 @@ function openChecklist() {
   }, refresh() { const y = $(".sheet-body", entry.el).scrollTop; setBody(entry, checklistHtml()); $(".sheet-body", entry.el).scrollTop = y; } });
 }
 function openCredits() {
-  const rows = ALL_SPECIES.map(sp => { const p = PHOTOS[sp];
-    return p ? `<tr><td><b>${esc(sp)}</b><br><a href="${esc(p.page)}" target="_blank" rel="noopener" class="hint">${esc(p.title)}</a></td><td>${esc(p.author || "Unknown author")}<br><a href="${esc(p.license_url || p.page)}" target="_blank" rel="noopener" class="hint">${esc(p.license)}</a></td></tr>`
-      : `<tr><td><b>${esc(sp)}</b></td><td class="muted">No photo</td></tr>`; }).join("");
-  openSheet({ title: "Photo credits", body: `<p class="hint" style="margin:0">The reference photos come from Wikimedia Commons. Each is shared under the Creative Commons licence named here, or is in the public domain. They are shown unchanged apart from resizing. Tap a file name to see the original and its full licence details. ${WX_CREDIT}.</p><div class="scrollx"><table class="table"><tbody>${rows}</tbody></table></div>` });
+  openSheet({ title: "Credits", body: `<p class="hint" style="margin:0">The species drawings were made for Bankside from each fish's identification features: body shape, fin colours, markings and barbels. ${WX_CREDIT}.</p>` });
 }
 
 /* -------------------------------------------------------------- licences */
