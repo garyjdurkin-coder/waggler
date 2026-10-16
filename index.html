@@ -249,6 +249,8 @@ fieldset{min-width:0}
 .wsteps li.done .wnum{background:var(--good);color:#fff}
 .wsteps li.done b{color:var(--muted)}
 .sub-h{margin:14px 0 4px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.h1row{display:flex;align-items:center;gap:10px}
+.ea-tag{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--water-soft);color:var(--water);white-space:nowrap}
 .share-months{margin-top:12px;display:flex;flex-direction:column;gap:6px}
 .cc-switch{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);cursor:pointer}
 .cc-switch input{width:24px;height:24px;flex:none;margin:2px 0 0;accent-color:var(--accent)}
@@ -318,7 +320,7 @@ fieldset{min-width:0}
   <header class="top wrap">
     <div class="top-row">
       <div class="brand">
-        <div><h1 aria-label="Waggler"><span aria-hidden="true">wagg<svg class="wl" viewBox="0 0 34 100" aria-hidden="true"><g transform="rotate(7 14 92)"><circle cx="14" cy="92" r="4" fill="none" stroke="var(--ink)" stroke-width="2.6"/><path d="M11.2 87.5 L16.8 87.5 L19 31 L9 31Z" fill="#C9A97A" stroke="var(--ink)" stroke-width="1.8" stroke-linejoin="round"/><rect x="9" y="4" width="10" height="26" rx="5" fill="var(--accent)" stroke="var(--ink)" stroke-width="1.6"/><rect x="9" y="26.5" width="10" height="5" fill="var(--ink)"/></g></svg>er</span></h1><div class="sub" id="subtitle">Fishing log</div></div>
+        <div><div class="h1row"><h1 aria-label="Waggler"><span aria-hidden="true">wagg<svg class="wl" viewBox="0 0 34 100" aria-hidden="true"><g transform="rotate(7 14 92)"><circle cx="14" cy="92" r="4" fill="none" stroke="var(--ink)" stroke-width="2.6"/><path d="M11.2 87.5 L16.8 87.5 L19 31 L9 31Z" fill="#C9A97A" stroke="var(--ink)" stroke-width="1.8" stroke-linejoin="round"/><rect x="9" y="4" width="10" height="26" rx="5" fill="var(--accent)" stroke="var(--ink)" stroke-width="1.6"/><rect x="9" y="26.5" width="10" height="5" fill="var(--ink)"/></g></svg>er</span></h1><span class="ea-tag">Early access</span></div><div class="sub" id="subtitle">Fishing log</div></div>
       </div>
       <button class="btn small" id="install" hidden>Install app</button>
     </div>
@@ -749,6 +751,7 @@ function render() {
   const views = { catches: viewLogbook, species: viewSpecies, stats: viewRecords, more: viewMore };
   m.innerHTML = (views[S.view] || viewCatches)();
   for (const s of S.stack) if (s.refresh) s.refresh();
+  ensureFirstUsed();
   checkNewMilestones();
 }
 function renderTabs() {
@@ -927,6 +930,7 @@ function viewMore() {
     <p class="hint" style="margin:10px 0 0">Waggler ${"1.6.0"} · runs on your phone · ${WX_CREDIT}</p></div>`;
   h += `<div class="panel"><div class="section-h" style="margin-bottom:6px"><h3 style="margin:0">About</h3><button class="btn small ghost" data-act="credits">Credits</button></div>
     <p class="hint" style="margin:0 0 10px">Waggler, a fishing log for UK anglers.</p>
+    ${EARLY_ACCESS ? `<h4 class="sub-h">Early access</h4><p class="hint" style="margin:0 0 10px">${esc(EA_TEXT)}${S.settings.firstUsed ? ` You started using Waggler on ${esc(fmtDate(S.settings.firstUsed))}.` : ""}</p>` : ""}
     <a class="btn small" href="${esc(feedbackHref())}">Send feedback</a>
     <h4 class="sub-h">Privacy</h4><p class="hint" style="margin:0">${esc(privacyText())}</p></div>`;
   return h;
@@ -1800,6 +1804,16 @@ async function drawMonthCard(ym, o) {
 
 /* ------------------------------------------------------- sharing readiness */
 const FEEDBACK_EMAIL = "waggler@gmail.com";
+const EARLY_ACCESS = true; // set false at full launch
+const EA_TEXT = "Early access: Waggler is free while it's being tested. If you start using it before the full launch, you're a founding angler, and everything that's free today stays free for you for life. New or improved features added later may be part of a paid option.";
+// first-use date: founding anglers are everyone who started before the full launch
+function ensureFirstUsed() {
+  if (S.status !== "ready" || !S.settingsLoaded || !S.loaded?.catches) return;
+  const first = S.catches.filter(c => !c.example && c.when).map(c => c.when.slice(0, 10)).sort()[0];
+  const cur = S.settings.firstUsed, today = nowLocal().slice(0, 10);
+  const want = [cur || today, first].filter(Boolean).sort()[0];
+  if (want !== cur) saveSettings({ firstUsed: want });
+}
 const IS_APP = typeof APP_URL !== "undefined";
 const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const isInstalled = () => { try { return navigator.standalone === true || matchMedia("(display-mode: standalone)").matches; } catch (e) { return false; } };
@@ -1826,6 +1840,7 @@ function welcomeHtml() {
     <ol class="wsteps">${steps.map(([done, t, d, btn], i) => `<li class="${done ? "done" : ""}"><span class="wnum">${done ? "✓" : i + 1}</span><div><b>${t}</b><span class="hint">${d}</span>${done ? "" : `<div style="margin-top:6px">${btn}</div>`}</div></li>`).join("")}</ol>
     <button class="btn primary" data-act="quick-log">${I.plus} Log your first catch</button>
     ${IS_APP && typeof makeBackup === "function" ? `<p class="hint" style="margin:0">New phone? <button class="linkbtn" data-act="go-restore">Restore from a backup</button></p>` : ""}
+    ${EARLY_ACCESS ? `<p class="hint" style="margin:0">${esc(EA_TEXT)}</p>` : ""}
     <p class="hint" style="margin:0">${esc(privacyText())}</p></div>`;
 }
 
