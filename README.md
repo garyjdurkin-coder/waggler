@@ -10,7 +10,7 @@ A fishing log for UK anglers that runs on your phone. Catches, photos, personal 
 
 ## Looking after your data
 
-Everything is stored on your phone. Use **Records → Back up now** regularly and keep the file in Google Drive or email. A new phone gets your log back with **Restore from a backup**. Backups made under the old name, Bankside, still restore.
+Everything is stored on your phone. Use **More → Back up now** regularly and keep the file in Google Drive or email. A new phone gets your log back with **Restore from a backup**. Backups made under the old name, Bankside, still restore.
 
 ## Credits
 

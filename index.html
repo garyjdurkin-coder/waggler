@@ -278,7 +278,10 @@ fieldset{min-width:0}
 .cl-group h2{font:700 17px var(--f-display);margin:0}
 .cl-body{display:flex;flex-direction:column;gap:20px}
 .cl-list{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
-.cl-row{display:flex;align-items:center;gap:12px;padding:8px 12px;border-bottom:1px solid var(--line);cursor:pointer;min-height:60px}
+.cl-row{display:flex;align-items:center;gap:12px;padding:8px 12px;border-bottom:1px solid var(--line);min-height:60px}
+.cl-open{display:flex;align-items:center;gap:12px;flex:1;min-width:0;border:0;background:none;padding:0;text-align:left;color:inherit;cursor:pointer;min-height:44px}
+.cl-open .chev{margin-left:auto;font-size:22px;color:var(--muted);line-height:1}
+.seg .chip svg{width:18px;height:18px}
 .cl-row:last-child{border-bottom:0}
 .cl-row input{width:24px;height:24px;flex:none;accent-color:var(--accent)}
 .cl-row img,.cl-row .cl-none{width:66px;aspect-ratio:3/2;object-fit:contain;border-radius:6px;flex:none;background:var(--water-soft);display:grid;place-items:center;color:var(--water);max-width:100%}
@@ -373,7 +376,7 @@ function idHtml(sp) {
   const x = SPECIES_INFO[sp]; if (!x) return "";
   return `<div class="idbox"><p>${esc(x.d)}</p><h4>${sp === "Unknown" ? "Common hybrids" : "How to tell"}</h4><ul>${x.f.map(t => `<li>${esc(t)}</li>`).join("")}</ul></div>`;
 }
-const spPhoto = sp => PHOTOS[sp] ? "fish/" + PHOTOS[sp].file + "?v=1.4.0" : null;
+const spPhoto = sp => PHOTOS[sp] ? "fish/" + PHOTOS[sp].file + "?v=1.5.0" : null;
 function creditLine(sp) {
   return PHOTOS[sp] ? "Drawing made for Waggler" : "";
 }
@@ -393,6 +396,8 @@ const I = {
   cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
   pin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
   trophy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v5a5 5 0 0 1-10 0V4zM7 6H4v1.5A3.5 3.5 0 0 0 7.5 11M17 6h3v1.5a3.5 3.5 0 0 1-3.5 3.5M12 14v3M8.5 20h7l-1-3h-5z"/></svg>',
+  grid:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/></svg>',
+  more:'<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
   plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
   back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
   x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
@@ -694,7 +699,8 @@ const S = {
   loaded: { catches: false, sessions: false, venues: false }, status: "connecting",
   view: "catches", filter: null, stack: []
 };
-try { const v = localStorage.getItem("bankside.view"); if (["catches","sessions","venues","records"].includes(v)) S.view = v; } catch (e) {}
+try { if (localStorage.getItem("bankside.sub") === "sessions") S.sub = "sessions"; } catch (e) {}
+try { const v = localStorage.getItem("bankside.view"); const old = { sessions: "catches", venues: "more", records: "stats" }; if (v === "sessions") S.sub = "sessions"; const nv = old[v] || v; if (["catches","species","stats","more"].includes(nv)) S.view = nv; } catch (e) {}
 
 const venueById = id => S.venues.find(v => v.id === id);
 const sessionById = id => S.sessions.find(s => s.id === id);
@@ -731,17 +737,17 @@ function toast(msg) { const t = $("#toast"); t.textContent = msg; t.hidden = fal
 function render() {
   renderTabs();
   const m = $("#main");
-  const views = { catches: viewCatches, sessions: viewSessions, venues: viewVenues, records: viewRecords };
+  const views = { catches: viewLogbook, species: viewSpecies, stats: viewRecords, more: viewMore };
   m.innerHTML = (views[S.view] || viewCatches)();
   for (const s of S.stack) if (s.refresh) s.refresh();
   checkNewMilestones();
 }
 function renderTabs() {
   const t = (k, label, icon) => `<button class="tab" data-tab="${k}" ${S.view === k ? 'aria-current="page"' : ""}>${icon}<span>${label}</span></button>`;
-  $("#tabs").innerHTML = t("catches", "Catches", I.list) + t("sessions", "Sessions", I.cal) +
+  $("#tabs").innerHTML = t("catches", "Catches", I.list) + t("species", "Species", I.grid) +
     `<button class="tab add" data-act="quick-log" aria-label="Quick log a catch"><span class="plus">${I.plus}</span><span>Log</span></button>` +
-    t("venues", "Venues", I.pin) + t("records", "Records", I.trophy);
-  $("#subtitle").textContent = { catches: "Catches", sessions: "Sessions", venues: "Venues", records: "Records & stats" }[S.view];
+    t("stats", "Stats", I.trophy) + t("more", "More", I.more);
+  $("#subtitle").textContent = { catches: S.sub === "sessions" ? "Sessions" : "Catches", species: "Species", stats: "Stats", more: "Venues, settings and backup" }[S.view] || "Catches";
 }
 
 function statusBlock() {
@@ -779,9 +785,13 @@ function catchCard(c, pbs) {
     </div></button>`;
 }
 
-function viewCatches() {
+function viewLogbook() {
   if (S.status !== "ready") return statusBlock();
-  let h = topBanners();
+  const ses = S.sub === "sessions";
+  return topBanners() + `<div class="chips seg" role="group" aria-label="Show"><button class="chip" data-sub="catches" aria-pressed="${!ses}">${I.list} Catches</button><button class="chip" data-sub="sessions" aria-pressed="${ses}">${I.cal} Sessions</button></div>` + (ses ? viewSessions() : viewCatches());
+}
+function viewCatches() {
+  let h = "";
   const year = new Date().getFullYear();
   const thisYear = S.catches.filter(c => (c.when || "").startsWith(String(year)));
   const yrSessions = S.sessions.filter(s => (s.date || "").startsWith(String(year)));
@@ -817,8 +827,7 @@ function sessionStats(s) {
   return { n: cs.length, total: cs.reduce((a, c) => a + (c.weightOz || 0), 0), cs };
 }
 function viewSessions() {
-  if (S.status !== "ready") return statusBlock();
-  let h = topBanners();
+  let h = "";
   h += `<div class="section-h"><h2>Sessions</h2><button class="btn small" data-act="new-session">${I.plus} New session</button></div>`;
   if (!S.sessions.length) return h + `<div class="empty">${I.fishbig}<h3>No sessions yet</h3><p>A session is one trip: a date and a venue. Waggler makes one for you when you log a catch, or you can start one before you cast.</p></div>`;
   const list = [...S.sessions].sort((a, b) => (b.date || "").localeCompare(a.date || "") || (b.start || "").localeCompare(a.start || ""));
@@ -836,8 +845,7 @@ function viewSessions() {
 }
 
 function viewVenues() {
-  if (S.status !== "ready") return statusBlock();
-  let h = topBanners();
+  let h = "";
   h += `<div class="section-h"><h2>Venues</h2><button class="btn small" data-act="new-venue">${I.plus} Add venue</button></div>`;
   if (!S.venues.length) return h + `<div class="empty">${I.fishbig}<h3>No venues yet</h3><p>Add the waters you fish, with their location. Waggler then picks the right venue when a photo carries a location.</p></div>`;
   h += `<div class="list">`;
@@ -855,10 +863,6 @@ function hbars(rows, max) { return rows.map(([k, n]) => `<div class="hbar"><span
 function viewRecords() {
   if (S.status !== "ready") return statusBlock();
   let h = topBanners();
-  { const st = checklistState(); const pct = Math.round(st.done.length / st.all.length * 100);
-    h += `<button class="panel cl-sum" data-act="checklist"><div class="section-h"><h3 style="margin:0">Species checklist</h3><span class="num">${st.done.length} / ${st.all.length}</span></div>
-      <div class="meter" role="img" aria-label="${st.done.length} of ${st.all.length} species caught"><i style="width:${pct}%"></i></div>
-      <span class="hint">${Object.keys(caughtMapYear()).length} species so far in ${new Date().getFullYear()}. ${st.done.length ? "Tap to see what's left." : "Tick off every species you've ever caught."}</span></button>`; }
   { const d = insightsData(""); h += `<button class="panel cl-sum" data-act="insights"><div class="section-h"><h3 style="margin:0">Your best conditions</h3></div>
       <span class="hint">${d.factors.length ? `Patterns from ${d.all} sessions: pressure, wind, sky, temperature and moon. Tap to see them.` : `Shows your patterns once you've logged 5 sessions with the weather. You have ${d.sessions}.`}</span></button>`; }
   const pbs = Object.values(pbMap()).sort((a, b) => b.weightOz - a.weightOz);
@@ -894,11 +898,13 @@ function viewRecords() {
     if (meths.length) h += `<div class="panel"><h3>Best methods</h3>${hbars(meths, meths[0][1])}</div>`;
     if (vens.length) h += `<div class="panel"><h3>Venues by fish caught</h3>${hbars(vens, vens[0][1])}</div>`;
   }
-  // licences + settings
+  return h;
+}
+
+function viewMore() {
+  if (S.status !== "ready") return statusBlock();
   const lic = S.settings.licences || [];
-  h += `<div class="panel"><div class="section-h" style="margin-bottom:10px"><h3 style="margin:0">Species guide</h3><button class="btn small ghost" data-act="credits">Credits</button></div><div class="guide">` +
-    ALL_SPECIES.map(sp => { const n = S.catches.filter(c => c.species === sp).length; const src = spPhoto(sp);
-      return `<button class="gtile" data-guide="${esc(sp)}">${src ? `<img src="${esc(src)}" alt="" loading="lazy">` : `<span class="gnone">${I.fish}</span>`}<b>${esc(sp)}</b><span>${n ? n + " logged" : (S.settings.ticked || {})[sp] ? "Caught before" : "Not yet"}</span></button>`; }).join("") + `</div></div>`;
+  let h = topBanners() + viewVenues();
   h += `<div class="panel"><h3>Licences & tickets</h3>` +
     (lic.length ? `<table class="table"><tbody>${lic.map(l => `<tr><td>${esc(l.name)}</td><td class="r">${l.expires ? "Runs out " + esc(fmtShort(l.expires)) + " " + esc(l.expires.slice(0,4)) : "No date"}</td></tr>`).join("")}</tbody></table>` : `<p class="muted" style="margin:0 0 10px">Add your rod licence and club books. Waggler warns you 30 days before they run out.</p>`) +
     `<div class="actions" style="margin-top:10px"><button class="btn small" data-act="licences">${I.edit} Edit</button></div></div>`;
@@ -908,7 +914,8 @@ function viewRecords() {
     <button class="btn small" data-act="export">${I.dl} Export catches (CSV)</button></div></div>`;
   h += `<div class="panel"><h3>Backup</h3><p class="hint" style="margin:0 0 10px">Your log is stored on this phone only. A backup file holds every catch and photo. Keep a copy in Google Drive or email it to yourself.${S.settings.lastBackup ? " Last backup: " + esc(fmtDate(S.settings.lastBackup)) + "." : ""}</p>
     <div class="actions"><button class="btn small primary" data-act="backup">${I.dl} Back up now</button><button class="btn small" data-act="restore">Restore from a backup</button><input type="file" id="restore-file" accept=".json,application/json" class="sr" tabindex="-1" aria-hidden="true"></div>
-    <p class="hint" style="margin:10px 0 0">Waggler ${"1.4.0"} · runs on your phone · ${WX_CREDIT}</p></div>`;
+    <p class="hint" style="margin:10px 0 0">Waggler ${"1.5.0"} · runs on your phone · ${WX_CREDIT}</p></div>`;
+  h += `<div class="panel"><div class="section-h" style="margin-bottom:6px"><h3 style="margin:0">About</h3><button class="btn small ghost" data-act="credits">Credits</button></div><p class="hint" style="margin:0">Waggler, a fishing log for UK anglers.</p></div>`;
   return h;
 }
 
@@ -1667,7 +1674,7 @@ function checkNewMilestones() {
   if (!fresh.length) return;
   const all = milestones(); const first = all.find(m => m.id === fresh[0]);
   saveSettings({ seenBadges: [...seen, ...fresh] });
-  setTimeout(() => toast(`Milestone: ${first.title}${fresh.length > 1 ? ` and ${fresh.length - 1} more` : ""}. See Records.`), 1200);
+  setTimeout(() => toast(`Milestone: ${first.title}${fresh.length > 1 ? ` and ${fresh.length - 1} more` : ""}. See Stats.`), 1200);
 }
 function milestonesPanel() {
   const ms = milestones(); const done = ms.filter(m => m.done);
@@ -1933,15 +1940,19 @@ function openSpeciesId(sp) {
 function openSpecies(sp) {
   const entry = openSheet({ title: sp, body: speciesHtml(sp), refresh() { setBody(entry, speciesHtml(sp)); } });
 }
+function viewSpecies() {
+  if (S.status !== "ready") return statusBlock();
+  return topBanners() + checklistHtml() + `<button class="panel cl-sum" data-guide="Unknown"><div class="section-h"><h3 style="margin:0">Not sure what you caught?</h3></div><span class="hint">See tips on spotting the common hybrids, and log it as Unknown.</span></button>`;
+}
 function checklistHtml() {
   const st = checklistState(clScope), yr = clScope === "year";
   const row = sp => {
     const logged = st.logged[sp] !== undefined, ticked = !!st.ticked[sp], src = spPhoto(sp), id = "cl-" + sp.replace(/[^A-Za-z0-9]/g, "");
     const note = logged ? `Logged${st.logged[sp] ? " · first " + esc(fmtShort(st.logged[sp])) + " " + esc(st.logged[sp].slice(0, 4)) : ""}` : ticked ? "Caught before Waggler" : yr ? "Not yet this year" : "Not caught yet";
-    return `<label class="cl-row ${logged || ticked ? "on" : ""}" for="${id}">
-      <input type="checkbox" id="${id}" data-tick="${esc(sp)}" ${logged || ticked ? "checked" : ""} ${logged || yr ? "disabled" : ""}>
-      ${src ? `<button type="button" class="idbtn" data-idsp="${esc(sp)}" aria-label="ID tips for ${esc(sp.toLowerCase())}"><img src="${esc(src)}" alt="" loading="lazy"></button>` : `<span class="cl-none">${I.fish}</span>`}
-      <span class="cl-txt"><b>${esc(sp)}</b><span>${note}</span></span></label>`;
+    return `<div class="cl-row ${logged || ticked ? "on" : ""}">
+      <input type="checkbox" id="${id}" data-tick="${esc(sp)}" aria-label="${esc(sp)} caught" ${logged || ticked ? "checked" : ""} ${logged || yr ? "disabled" : ""}>
+      <button type="button" class="cl-open" data-guide="${esc(sp)}">${src ? `<img src="${esc(src)}" alt="" loading="lazy">` : `<span class="cl-none">${I.fish}</span>`}
+      <span class="cl-txt"><b>${esc(sp)}</b><span>${note}</span></span><span class="chev" aria-hidden="true">›</span></button></div>`;
   };
   const groups = Object.entries(SPECIES).filter(([g]) => g !== "Not sure").map(([g, list]) => {
     const n = list.filter(sp => st.done.includes(sp)).length;
@@ -1951,7 +1962,7 @@ function checklistHtml() {
   return `<div class="chips" role="group" aria-label="Which list"><button class="chip" data-clscope="all" aria-pressed="${!yr}">All time</button><button class="chip" data-clscope="year" aria-pressed="${yr}">This year (${new Date().getFullYear()})</button></div>
     <div class="cl-head"><b class="num">${st.done.length}<span> / ${st.all.length}</span></b><span>${yr ? "species caught this year" : "species caught"}</span><div class="meter"><i style="width:${Math.round(st.done.length / st.all.length * 100)}%"></i></div></div>
     <button class="btn small" data-share="species" data-arg="${yr ? "year" : ""}" style="align-self:flex-start">${I.image} Share my species count</button>
-    <p class="hint" style="margin:0">${yr ? `Species you've logged since 1 January. The list starts again each new year.` : `Species you log are ticked for you. Tick any others you've caught before you started using Waggler.`}</p>
+    <p class="hint" style="margin:0">${yr ? `Species you've logged since 1 January. The list starts again each new year.` : `Species you log are ticked for you. Tick any others you've caught before you started using Waggler.`} Tap a fish for its ID tips and your records.</p>
     <div class="chips" role="group" aria-label="Show"><button class="chip" data-clf="all" aria-pressed="${clFilter === "all"}">All</button><button class="chip" data-clf="todo" aria-pressed="${clFilter === "todo"}">Still to catch</button><button class="chip" data-clf="done" aria-pressed="${clFilter === "done"}">Caught</button></div>
     <div class="cl-body" data-show="${clFilter}">${groups}${other}</div>`;
 }
@@ -2041,6 +2052,9 @@ document.addEventListener("click", e => {
   const shr = t.closest("[data-share]"); if (shr) { e.preventDefault(); openShareFor(shr.dataset.share, shr.dataset.arg); return; }
   const ids = t.closest("[data-idsp]"); if (ids) { e.preventDefault(); e.stopPropagation(); openSpeciesId(ids.dataset.idsp); return; }
   const gd = t.closest("[data-guide]"); if (gd) { openSpecies(gd.dataset.guide); return; }
+  const sb = t.closest("[data-sub]"); if (sb) { S.sub = sb.dataset.sub; try { localStorage.setItem("bankside.sub", S.sub); } catch (er) {} render(); return; }
+  const cf = t.closest("[data-clf]"); if (cf && !cf.closest(".sheet")) { clFilter = cf.dataset.clf; render(); return; }
+  const cs2 = t.closest("[data-clscope]"); if (cs2 && !cs2.closest(".sheet")) { clScope = cs2.dataset.clscope; render(); return; }
   const fl = t.closest("[data-filter]"); if (fl) { S.filter = fl.dataset.filter || null; render(); return; }
   const un = t.closest("[data-units]"); if (un && S.db) { const units = un.dataset.units; S.settings.units = units; render(); write(() => S.db.doc("settings/main").set({ ...S.settings, units })).catch(er => toast(dbErr(er))); return; }
   const a = t.closest("[data-act]"); if (!a || a.closest(".sheet")) return;
@@ -2056,8 +2070,14 @@ document.addEventListener("click", e => {
   else if (act === "credits") openCredits();
   else if (act === "backup") doBackup(a);
   else if (act === "restore") { const i = $("#restore-file"); i.value = ""; i.click(); }
-  else if (act === "checklist") openChecklist();
+  else if (act === "checklist") { S.view = "species"; render(); window.scrollTo(0, 0); }
   else if (act === "clear-examples") { if (a.dataset.armed) clearExamples(); else { a.dataset.armed = "1"; a.textContent = "Tap again to remove"; setTimeout(() => { if (a.isConnected) { delete a.dataset.armed; a.textContent = "Remove examples"; } }, 4000); } }
+});
+document.addEventListener("change", e => {
+  const cb = e.target.closest && e.target.closest("[data-tick]"); if (!cb || cb.closest(".sheet")) return;
+  const ticked = { ...(S.settings.ticked || {}) };
+  if (cb.checked) ticked[cb.dataset.tick] = true; else delete ticked[cb.dataset.tick];
+  saveSettings({ ticked }); render();
 });
 document.addEventListener("keydown", e => { if (e.key === "Escape" && S.stack.length) closeSheet(S.stack[S.stack.length - 1]); });
 
