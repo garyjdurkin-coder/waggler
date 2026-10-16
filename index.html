@@ -88,6 +88,8 @@ main{display:flex;flex-direction:column;gap:18px;padding-block:6px 20px}
 .muted{color:var(--muted)}
 .num{font-family:var(--f-data);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 
+.freg{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin:0 0 12px}
+.freglink{display:inline-block;margin:-2px 0 12px;font-size:14px;font-weight:600;color:var(--water)}
 .pbl{display:flex;flex-direction:column}
 .pbrow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border:0;border-top:1px solid var(--line);background:none;color:inherit;font:inherit;text-align:left;width:100%;cursor:pointer}
 .pbrow:first-child{border-top:0}.pbn{min-width:0}.pbn b{display:block}.pbn span{display:block;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -420,7 +422,7 @@ function idHtml(sp) {
   const x = SPECIES_INFO[sp]; if (!x) return "";
   return `<div class="idbox"><p>${esc(x.d)}</p><h4>${sp === "Unknown" ? "Common hybrids" : "How to tell"}</h4><ul>${x.f.map(t => `<li>${esc(t)}</li>`).join("")}</ul></div>`;
 }
-const spPhoto = sp => PHOTOS[sp] ? "fish/" + PHOTOS[sp].file + "?v=1.1.0" : null;
+const spPhoto = sp => PHOTOS[sp] ? "fish/" + PHOTOS[sp].file + "?v=1.0.0" : null;
 function creditLine(sp) {
   return PHOTOS[sp] ? "Drawing made for Waggler" : "";
 }
@@ -1010,11 +1012,11 @@ function viewMore() {
   h += `<div class="panel"><h3>Backup</h3><p class="hint" style="margin:0 0 10px">Your log is stored on this phone only. A backup file holds every catch and photo. Keep a copy in Google Drive or email it to yourself.${S.settings.lastBackup ? " Last backup: " + esc(fmtDate(S.settings.lastBackup)) + "." : ""}</p>
     <div class="actions"><button class="btn small primary" data-act="backup">${I.dl} Back up now</button><button class="btn small" data-act="restore">Restore from a backup</button><input type="file" id="restore-file" accept=".json,application/json" class="sr" tabindex="-1" aria-hidden="true"></div>
     <label class="toggle" style="margin-top:12px"><input type="checkbox" id="ask-backup" ${S.settings.askBackup === false ? "" : "checked"}> Ask to back up after each session</label>
-    <p class="hint" style="margin:10px 0 0">Waggler ${"1.1.0"} · runs on your phone · ${WX_CREDIT}</p></div>`;
+    <p class="hint" style="margin:10px 0 0">Waggler ${"1.0.0"} · runs on your phone · ${WX_CREDIT}</p></div>`;
   h += `<div class="panel"><div class="section-h" style="margin-bottom:6px"><h3 style="margin:0">About</h3><button class="btn small ghost" data-act="credits">Credits</button></div>
     <p class="hint" style="margin:0 0 10px">Waggler, a fishing log for UK anglers.</p>
-    ${EARLY_ACCESS ? `<h4 class="sub-h">Early access</h4><p class="hint" style="margin:0 0 10px">${esc(EA_TEXT)}${S.settings.firstUsed ? ` You started using Waggler on ${esc(fmtDate(S.settings.firstUsed))}, so you're a founding angler.` : ""}</p>`
-      : isFounder() ? `<h4 class="sub-h">Founding angler</h4><p class="hint" style="margin:0 0 10px">You started using Waggler on ${esc(fmtDate(S.settings.firstUsed))}, during early access. Everything that was free then stays free for you.</p>` : ""}
+    ${EARLY_ACCESS ? `<h4 class="sub-h">Early access</h4><p class="hint" style="margin:0 0 10px">${esc(EA_TEXT)}${S.settings.firstUsed ? ` You started using Waggler on ${esc(fmtDate(S.settings.firstUsed))}, so you're a founding angler.` : ""}</p>${founderRegHtml()}`
+      : isFounder() ? `<h4 class="sub-h">Founding angler</h4><p class="hint" style="margin:0 0 10px">You started using Waggler on ${esc(fmtDate(S.settings.firstUsed))}, during early access. Everything that was free then stays free for you.</p>${founderRegHtml()}` : ""}
     <a class="btn small" href="${esc(feedbackHref())}">Send feedback</a>
     <h4 class="sub-h">Privacy</h4><p class="hint" style="margin:0">${esc(privacyText())}</p>
     <p class="hint" style="margin:12px 0 0">${esc(COPYRIGHT)}</p></div>`;
@@ -1815,7 +1817,7 @@ function milestonesPanel() {
   return `<div class="panel"><div class="section-h" style="margin-bottom:10px"><h3 style="margin:0">Milestones</h3><span class="num muted">${done.length} / ${ms.length}</span></div>
     ${ms.filter(m => m.special && m.done).map(m => `<button class="founder" data-share="badge" data-arg="founder" aria-label="Founding angler, earned. Tap to share">
       <span class="fmedal"><svg viewBox="0 0 34 100" aria-hidden="true"><g transform="rotate(7 14 92)"><circle cx="14" cy="92" r="4" fill="none" stroke="#5A4208" stroke-width="2.6"/><path d="M11.2 87.5 L16.8 87.5 L19 31 L9 31Z" fill="#FBF3D5" stroke="#5A4208" stroke-width="1.8" stroke-linejoin="round"/><rect x="9" y="4" width="10" height="26" rx="5" fill="#C2410C" stroke="#5A4208" stroke-width="1.6"/><rect x="9" y="26.5" width="10" height="5" fill="#5A4208"/></g></svg></span>
-      <span class="ftxt"><span class="fkick">Founding angler</span><b>One of the first to fish with Waggler</b><span>Joined ${esc(badgeDate(m))} · early access</span></span></button>`).join("")}
+      <span class="ftxt"><span class="fkick">Founding angler</span><b>One of the first to fish with Waggler</b><span>Joined ${esc(badgeDate(m))} · early access</span></span></button><a class="freglink" href="${esc(founderHref())}">Register for founder updates</a>`).join("")}
     <div class="badgegrid">${ms.filter(m => !m.special).map(m => `<button class="mbadge ${m.done ? "on" : ""}" ${m.done ? `data-share="badge" data-arg="${esc(m.id)}"` : "disabled"} aria-label="${esc(m.title)}${m.tier != null ? ", " + TIERS[m.tier].name.toLowerCase() : ""}${m.done ? ", earned. Tap to share" : ", not yet"}">
       ${badgeMedal(m)}<b>${esc(m.title)}</b><span>${m.done ? esc(badgeDate(m)) : m.progressText ? esc(m.progressText) : m.need > 1 ? `${m.have} / ${m.need}` : esc(m.desc)}</span></button>`).join("")}</div>
     ${done.length ? `<p class="hint" style="margin:10px 0 0">Tap a milestone you've earned to make a card for it.</p>` : ""}</div>`;
@@ -2001,6 +2003,13 @@ function iosBanner() {
 function privacyText() {
   return IS_APP ? "Your catches, photos and venues are stored on this phone only. Waggler doesn't send them to anyone. The only things that leave your phone are a catch's location, sent to Open-Meteo to look up the weather, and requests for the app's fonts. To see how many people use Waggler, visits are counted with Cloudflare Web Analytics, and the first time you open Waggler on a phone it's counted once as a new angler. Cloudflare says this doesn't use cookies or track you as a person. It never sees your catches, photos or venues."
     : "Your catches, photos and venues are saved to your Claude account and only you can see them.";
+}
+function founderHref() {
+  const body = `Please add me to the Waggler founder updates list.\n\nName (optional):\n\n${S.settings.firstUsed ? "First used Waggler on " + fmtDate(S.settings.firstUsed) + ".\n\n" : ""}My email address will only be used for Waggler founder updates. Reply STOP at any time to come off the list.`;
+  return `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent("Waggler founder updates")}&body=${encodeURIComponent(body)}`;
+}
+function founderRegHtml() {
+  return `<div class="freg"><a class="btn small primary" href="${esc(founderHref())}">Register for founder updates</a><span class="hint">Be the first to find out about new features. This opens an email to Waggler, so you choose what to send.</span></div>`;
 }
 function feedbackHref() {
   const body = "What were you doing?\n\nWhat happened?\n\nWhat did you expect?\n\nPhone and browser: " + navigator.userAgent;
