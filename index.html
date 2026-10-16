@@ -397,7 +397,7 @@ function idHtml(sp) {
   const x = SPECIES_INFO[sp]; if (!x) return "";
   return `<div class="idbox"><p>${esc(x.d)}</p><h4>${sp === "Unknown" ? "Common hybrids" : "How to tell"}</h4><ul>${x.f.map(t => `<li>${esc(t)}</li>`).join("")}</ul></div>`;
 }
-const spPhoto = sp => PHOTOS[sp] ? "fish/" + PHOTOS[sp].file + "?v=1.6.0" : null;
+const spPhoto = sp => PHOTOS[sp] ? "fish/" + PHOTOS[sp].file + "?v=1.7.0" : null;
 function creditLine(sp) {
   return PHOTOS[sp] ? "Drawing made for Waggler" : "";
 }
@@ -938,7 +938,7 @@ function viewMore() {
     <button class="btn small" data-act="export">${I.dl} Export catches (CSV)</button></div></div>`;
   h += `<div class="panel"><h3>Backup</h3><p class="hint" style="margin:0 0 10px">Your log is stored on this phone only. A backup file holds every catch and photo. Keep a copy in Google Drive or email it to yourself.${S.settings.lastBackup ? " Last backup: " + esc(fmtDate(S.settings.lastBackup)) + "." : ""}</p>
     <div class="actions"><button class="btn small primary" data-act="backup">${I.dl} Back up now</button><button class="btn small" data-act="restore">Restore from a backup</button><input type="file" id="restore-file" accept=".json,application/json" class="sr" tabindex="-1" aria-hidden="true"></div>
-    <p class="hint" style="margin:10px 0 0">Waggler ${"1.6.0"} · runs on your phone · ${WX_CREDIT}</p></div>`;
+    <p class="hint" style="margin:10px 0 0">Waggler ${"1.7.0"} · runs on your phone · ${WX_CREDIT}</p></div>`;
   h += `<div class="panel"><div class="section-h" style="margin-bottom:6px"><h3 style="margin:0">About</h3><button class="btn small ghost" data-act="credits">Credits</button></div>
     <p class="hint" style="margin:0 0 10px">Waggler, a fishing log for UK anglers.</p>
     ${EARLY_ACCESS ? `<h4 class="sub-h">Early access</h4><p class="hint" style="margin:0 0 10px">${esc(EA_TEXT)}${S.settings.firstUsed ? ` You started using Waggler on ${esc(fmtDate(S.settings.firstUsed))}, so you're a founding angler.` : ""}</p>`
@@ -2028,6 +2028,45 @@ function openVenueForm(existing) {
   }});
 }
 
+
+/* ------------------------------------------------------------ size and records */
+// Typical (common) and maximum length in cm, from FishBase species summaries (worldwide figures).
+// null typical = FishBase figure left out because it doesn't reflect UK fish.
+const SIZES = {
+  "Roach": [25, 50], "Rudd": [20, 62], "Bream": [25, 82], "Skimmer bream": [25, 82], "Silver bream": [20, 46],
+  "Common carp": [31, 129], "Mirror carp": [31, 129], "Leather carp": [31, 129], "Ghost carp": [31, 129], "Crucian carp": [15, 64], "Grass carp": [null, 150],
+  "Tench": [20, 70], "Chub": [30, 60], "Dace": [15, 40], "Barbel": [30, 120], "Ide": [30, 85], "Golden orfe": [30, 85], "Gudgeon": [12, 21],
+  "Bleak": [15, 30], "Ruffe": [12, 29], "Eel": [50, 133], "Minnow": [7, 14], "Sturgeon": [null, 200], "Sterlet": [40, 125],
+  "Pike": [40, 150], "Perch": [25, 60], "Zander": [50, 100], "Wels catfish": [null, 273],
+  "Brown trout": [null, 140], "Rainbow trout": [60, 123], "Grayling": [30, 60], "Sea trout": [null, 140], "Salmon": [null, 150]
+};
+// British rod-caught records. A built-in copy, replaced by the latest records.json when the app is online.
+let RECORDS = {"asAt":{"coarse":"2026-06-10","game":"2019-06-25"},"source":"British Record (rod-caught) Fish Committee, Angling Trust","records":{"Barbel":{"w":[22,10,0],"year":2026,"list":"coarse"},"Bleak":{"w":[0,4,9],"year":1998,"list":"coarse"},"Bream":{"w":[22,11,0],"year":2012,"list":"coarse"},"Skimmer bream":{"w":[22,11,0],"year":2012,"list":"coarse","note":"Skimmers are young bream, so this is the bream record."},"Silver bream":{"w":[3,4,0],"year":2012,"list":"coarse"},"Common carp":{"w":[68,8,0],"year":2026,"list":"coarse","note":"The record list has one entry for carp."},"Mirror carp":{"w":[68,8,0],"year":2026,"list":"coarse","note":"The record list has one entry for carp. It doesn't say whether it covers every variety."},"Leather carp":{"w":[68,8,0],"year":2026,"list":"coarse","note":"The record list has one entry for carp. It doesn't say whether it covers every variety."},"Crucian carp":{"w":[4,14,0],"year":2024,"list":"coarse"},"Wels catfish":{"w":[150,3,0],"year":2024,"list":"coarse"},"Chub":{"w":[9,5,0],"year":2007,"list":"coarse"},"Dace":{"w":[1,5,2],"year":2002,"list":"coarse"},"Eel":{"w":[11,3,0],"year":2024,"list":"coarse"},"Gudgeon":{"w":[0,5,0],"year":1990,"list":"coarse"},"Ide":{"w":[8,5,0],"year":2021,"list":"coarse","note":"A joint record, set three times (2000, 2018 and 2021)."},"Golden orfe":{"w":[8,5,0],"year":2021,"list":"coarse","note":"The record list counts orfe with ide."},"Minnow":{"w":[0,0,13.5],"year":1998,"list":"coarse"},"Perch":{"w":[6,3,0],"year":2011,"list":"coarse","note":"A joint record, set twice in 2011."},"Pike":{"w":[47,5,0],"year":2024,"list":"coarse"},"Roach":{"w":[4,3,0],"year":2024,"list":"coarse","note":"A joint record, set in 2006 and 2024."},"Rudd":{"w":[4,10,0],"year":2001,"list":"coarse"},"Ruffe":{"w":[0,5,4],"year":1980,"list":"coarse"},"Tench":{"w":[15,3,6],"year":2001,"list":"coarse"},"Zander":{"w":[21,5,0],"year":2007,"list":"coarse"},"Grayling":{"w":[4,8,0],"year":2019,"list":"game"},"Salmon":{"w":[64,0,0],"year":1922,"list":"game"},"Brown trout":{"w":[31,12,0],"year":2002,"list":"game","note":"Wild fish. The record for stocked fish is 28 lb 1 oz (1995)."},"Rainbow trout":{"w":[24,1,4],"year":1998,"list":"game","note":"Fish living wild in a water. A heavier stocked-fish claim was not yet confirmed when the list was published."},"Sea trout":{"w":[28,5,4],"year":1992,"list":"game"}}};
+try { const r = JSON.parse(localStorage.getItem("waggler.records") || "null"); if (r && r.records && r.asAt && r.asAt.coarse >= RECORDS.asAt.coarse) RECORDS = r; } catch (e) {}
+if (typeof APP_URL !== "undefined" && navigator.onLine) {
+  fetch("records.json", { cache: "no-cache" }).then(r => r.ok ? r.json() : null).then(j => {
+    if (j && j.records && j.asAt) { RECORDS = j; try { localStorage.setItem("waggler.records", JSON.stringify(j)); } catch (e) {} if (S.stack.length) for (const x of S.stack) if (x.refresh) x.refresh(); }
+  }).catch(() => {});
+}
+const recOz = r => r.w[0] * 16 + r.w[1] + r.w[2] / 16;
+function recText(r) {
+  if (S.settings.units === "kg") return fmtWeight(recOz(r));
+  const [lb, oz, dr] = r.w; return [lb ? lb + " lb" : "", oz || (!lb && !dr) ? oz + " oz" : "", dr ? dr + " dr" : ""].filter(Boolean).join(" ");
+}
+function sizeHtml(sp, pb) {
+  const z = SIZES[sp], r = RECORDS.records[sp];
+  if (!z && !r) return "";
+  let h = `<div class="idbox"><h4 style="margin-top:0">Size and records</h4>`;
+  if (z) h += `<p style="margin:0">${z[0] ? `Usually about <b>${z[0]} cm</b> long, and can reach about ${z[1]} cm.` : `Can reach about <b>${z[1]} cm</b> long.`}</p>`;
+  if (r) {
+    h += `<p style="margin:0">British record: <b>${esc(recText(r))}</b> (${r.year}).${r.note ? " " + esc(r.note) : ""}</p>`;
+    if (pb && pb.weightOz) { const pc = pb.weightOz / recOz(r) * 100; h += `<p style="margin:0">Your PB is <b>${pc >= 10 ? Math.round(pc) : pc.toFixed(1)}%</b> of the record.</p>`; }
+  } else if (["Sturgeon", "Sterlet", "Grass carp", "Ghost carp", "F1 carp"].includes(sp)) h += `<p class="hint" style="margin:0">No British record is listed for this fish.</p>`;
+  const asAt = r ? RECORDS.asAt[r.list] : null;
+  h += `<p class="hint" style="margin:0">${z ? "Lengths are worldwide figures from FishBase. " : ""}${r ? `Record from the British Record (rod-caught) Fish Committee ${r.list} list, as at ${esc(fmtDate(asAt))}.` : ""}</p></div>`;
+  return h;
+}
+
 /* --------------------------------------------------------- species guide */
 function speciesHtml(sp) {
   const cs = S.catches.filter(c => c.species === sp).sort((a, b) => (b.weightOz || 0) - (a.weightOz || 0));
@@ -2038,13 +2077,14 @@ function speciesHtml(sp) {
   return `${src ? `<figure class="refhero"><img src="${esc(src)}" alt="A ${esc(sp.toLowerCase())}"></figure>` : `<div class="hero"><div class="ph-empty">${I.fishbig}</div></div>`}
     <div class="big-title"><h3>${esc(sp)}</h3><span class="num">${cs.length} caught</span></div>
     ${idHtml(sp)}
+    ${sizeHtml(sp, pb)}
     ${pb ? `<div class="actions"><button class="btn" data-share="pb" data-arg="${esc(sp)}">${I.image} Make PB card</button></div>` : ""}
     ${cs.length ? `<dl class="facts" style="margin:0">${f("Personal best", pb ? `<span class="num">${esc(fmtWeight(pb.weightOz))}</span>` : "")}${f("Last caught", esc(fmtDate([...cs].sort((a, b) => (b.when || "").localeCompare(a.when || ""))[0].when)))}${f("Best baits", esc(baits))}${f("Where", esc(vens))}</dl>
       <div class="list">${cs.slice(0, 10).map(c => catchCard(c, pbMap())).join("")}</div>` : `<p class="muted" style="margin:0">You haven't logged ${sp === "Unknown" ? "an unknown fish" : "a " + esc(sp.toLowerCase())} yet.</p>`}`;
 }
 function openSpeciesId(sp) {
   const src = spPhoto(sp);
-  openSheet({ title: sp, body: `${src ? `<figure class="refhero"><img src="${esc(src)}" alt="A ${esc(sp.toLowerCase())}"></figure>` : ""}${idHtml(sp) || `<p class="muted" style="margin:0">No ID notes for this one yet.</p>`}` });
+  openSheet({ title: sp, body: `${src ? `<figure class="refhero"><img src="${esc(src)}" alt="A ${esc(sp.toLowerCase())}"></figure>` : ""}${idHtml(sp) || `<p class="muted" style="margin:0">No ID notes for this one yet.</p>`}${sizeHtml(sp, pbMap()[sp])}` });
 }
 function openSpecies(sp) {
   const entry = openSheet({ title: sp, body: speciesHtml(sp), refresh() { setBody(entry, speciesHtml(sp)); } });
@@ -2088,7 +2128,7 @@ function openChecklist() {
   }, refresh() { const y = $(".sheet-body", entry.el).scrollTop; setBody(entry, checklistHtml()); $(".sheet-body", entry.el).scrollTop = y; } });
 }
 function openCredits() {
-  openSheet({ title: "Credits", body: `<p class="hint" style="margin:0">The species drawings and ID notes were made for Waggler from each fish's standard identification features: body shape, fin colours, markings and barbels. ${WX_CREDIT}.</p><p class="hint" style="margin:0">${esc(COPYRIGHT)}</p>` });
+  openSheet({ title: "Credits", body: `<p class="hint" style="margin:0">The species drawings and ID notes were made for Waggler from each fish's standard identification features: body shape, fin colours, markings and barbels. ${WX_CREDIT}.</p><p class="hint" style="margin:0">British record weights: British Record (rod-caught) Fish Committee, published by the Angling Trust. Typical and maximum lengths: FishBase (fishbase.se).</p><p class="hint" style="margin:0">${esc(COPYRIGHT)}</p>` });
 }
 
 /* -------------------------------------------------------------- licences */
