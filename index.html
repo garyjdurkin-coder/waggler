@@ -760,6 +760,7 @@ function renderTabs() {
   $("#tabs").innerHTML = t("catches", "Catches", I.list) + t("species", "Species", I.grid) +
     `<button class="tab add" data-act="quick-log" aria-label="Quick log a catch"><span class="plus">${I.plus}</span><span>Log</span></button>` +
     t("stats", "Stats", I.trophy) + t("more", "More", I.more);
+  const ea = $(".ea-tag"); if (ea) ea.hidden = !EARLY_ACCESS;
   $("#subtitle").textContent = { catches: S.sub === "sessions" ? "Sessions" : "Catches", species: "Species", stats: "Stats", more: "Venues, settings and backup" }[S.view] || "Catches";
 }
 
@@ -931,9 +932,11 @@ function viewMore() {
     <p class="hint" style="margin:10px 0 0">Waggler ${"1.6.0"} · runs on your phone · ${WX_CREDIT}</p></div>`;
   h += `<div class="panel"><div class="section-h" style="margin-bottom:6px"><h3 style="margin:0">About</h3><button class="btn small ghost" data-act="credits">Credits</button></div>
     <p class="hint" style="margin:0 0 10px">Waggler, a fishing log for UK anglers.</p>
-    ${EARLY_ACCESS ? `<h4 class="sub-h">Early access</h4><p class="hint" style="margin:0 0 10px">${esc(EA_TEXT)}${S.settings.firstUsed ? ` You started using Waggler on ${esc(fmtDate(S.settings.firstUsed))}.` : ""}</p>` : ""}
+    ${EARLY_ACCESS ? `<h4 class="sub-h">Early access</h4><p class="hint" style="margin:0 0 10px">${esc(EA_TEXT)}${S.settings.firstUsed ? ` You started using Waggler on ${esc(fmtDate(S.settings.firstUsed))}, so you're a founding angler.` : ""}</p>`
+      : isFounder() ? `<h4 class="sub-h">Founding angler</h4><p class="hint" style="margin:0 0 10px">You started using Waggler on ${esc(fmtDate(S.settings.firstUsed))}, during early access. Everything that was free then stays free for you.</p>` : ""}
     <a class="btn small" href="${esc(feedbackHref())}">Send feedback</a>
-    <h4 class="sub-h">Privacy</h4><p class="hint" style="margin:0">${esc(privacyText())}</p></div>`;
+    <h4 class="sub-h">Privacy</h4><p class="hint" style="margin:0">${esc(privacyText())}</p>
+    <p class="hint" style="margin:12px 0 0">${esc(COPYRIGHT)}</p></div>`;
   return h;
 }
 
@@ -1810,12 +1813,16 @@ async function drawMonthCard(ym, o) {
 
 /* ------------------------------------------------------- sharing readiness */
 const FEEDBACK_EMAIL = "waggler@gmail.com";
-const EARLY_ACCESS = true; // set false at full launch
-const EA_TEXT = "Early access: Waggler is free while it's being tested. If you start using it before the full launch, you're a founding angler, and everything that's free today stays free for you for life. New or improved features added later may be part of a paid option.";
-// first-use date: founding anglers are everyone who started before the full launch
+const FOUNDER_CUTOFF = "2027-01-31"; // anyone who starts on or before this date is a founding angler
+const EARLY_ACCESS = nowLocal().slice(0, 10) <= FOUNDER_CUTOFF;
+const isFounder = () => !!S.settings.firstUsed && S.settings.firstUsed <= FOUNDER_CUTOFF;
+const COPYRIGHT = "© 2026 Gary Durkin. All rights reserved.";
+const EA_TEXT = "Early access: Waggler is free while it's being tested. Start using it on or before 31 January 2027 and you're a founding angler: everything that's free today stays free for you for life. New or improved features added later may be part of a paid option.";
+// first-use date: founding anglers are everyone who started on or before the cut-off
 function ensureFirstUsed() {
   if (S.status !== "ready" || !S.settingsLoaded || !S.loaded?.catches) return;
-  const first = S.catches.filter(c => !c.example && c.when).map(c => c.when.slice(0, 10)).sort()[0];
+  // the date each catch was entered into the app (not the date it was caught), so back-dated catches can't move it
+  const first = S.catches.filter(c => !c.example && (c.createdAt || c.when)).map(c => (c.createdAt || c.when).slice(0, 10)).sort()[0];
   const cur = S.settings.firstUsed, today = nowLocal().slice(0, 10);
   const want = [cur || today, first].filter(Boolean).sort()[0];
   if (want !== cur) saveSettings({ firstUsed: want });
@@ -2045,7 +2052,7 @@ function openChecklist() {
   }, refresh() { const y = $(".sheet-body", entry.el).scrollTop; setBody(entry, checklistHtml()); $(".sheet-body", entry.el).scrollTop = y; } });
 }
 function openCredits() {
-  openSheet({ title: "Credits", body: `<p class="hint" style="margin:0">The species drawings and ID notes were made for Waggler from each fish's standard identification features: body shape, fin colours, markings and barbels. ${WX_CREDIT}.</p>` });
+  openSheet({ title: "Credits", body: `<p class="hint" style="margin:0">The species drawings and ID notes were made for Waggler from each fish's standard identification features: body shape, fin colours, markings and barbels. ${WX_CREDIT}.</p><p class="hint" style="margin:0">${esc(COPYRIGHT)}</p>` });
 }
 
 /* -------------------------------------------------------------- licences */

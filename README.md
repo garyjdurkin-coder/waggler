@@ -15,3 +15,7 @@ Everything is stored on your phone. Use **More → Back up now** regularly and k
 ## Credits
 
 The species drawings and ID notes were made for Waggler from each fish's standard identification features. Weather data by [Open-Meteo.com](https://open-meteo.com/).
+
+## Copyright
+
+© 2026 Gary Durkin. All rights reserved. The code, species drawings, ID notes and the Waggler name and logo may not be copied or reused without permission.
