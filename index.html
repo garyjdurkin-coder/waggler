@@ -355,7 +355,7 @@ function idHtml(sp) {
   const x = SPECIES_INFO[sp]; if (!x) return "";
   return `<div class="idbox"><p>${esc(x.d)}</p><h4>${sp === "Unknown" ? "Common hybrids" : "How to tell"}</h4><ul>${x.f.map(t => `<li>${esc(t)}</li>`).join("")}</ul></div>`;
 }
-const spPhoto = sp => PHOTOS[sp] ? "fish/" + PHOTOS[sp].file + "?v=1.3.0" : null;
+const spPhoto = sp => PHOTOS[sp] ? "fish/" + PHOTOS[sp].file + "?v=1.3.1" : null;
 function creditLine(sp) {
   return PHOTOS[sp] ? "Drawing made for Waggler" : "";
 }
@@ -883,7 +883,7 @@ function viewRecords() {
     <button class="btn small" data-act="export">${I.dl} Export catches (CSV)</button></div></div>`;
   h += `<div class="panel"><h3>Backup</h3><p class="hint" style="margin:0 0 10px">Your log is stored on this phone only. A backup file holds every catch and photo. Keep a copy in Google Drive or email it to yourself.${S.settings.lastBackup ? " Last backup: " + esc(fmtDate(S.settings.lastBackup)) + "." : ""}</p>
     <div class="actions"><button class="btn small primary" data-act="backup">${I.dl} Back up now</button><button class="btn small" data-act="restore">Restore from a backup</button><input type="file" id="restore-file" accept=".json,application/json" class="sr" tabindex="-1" aria-hidden="true"></div>
-    <p class="hint" style="margin:10px 0 0">Waggler ${"1.3.0"} · runs on your phone · ${WX_CREDIT}</p></div>`;
+    <p class="hint" style="margin:10px 0 0">Waggler ${"1.3.1"} · runs on your phone · ${WX_CREDIT}</p></div>`;
   return h;
 }
 
@@ -1313,9 +1313,7 @@ async function drawCatchCard(c, o = {}) {
   g.fillStyle = sh; g.fillRect(0, H * 0.45, W, H * 0.55);
   const tg = g.createLinearGradient(0, 0, 0, 200); tg.addColorStop(0, "rgba(8,14,12,.55)"); tg.addColorStop(1, "rgba(8,14,12,0)"); g.fillStyle = tg; g.fillRect(0, 0, W, 200);
   const X = 72;
-  // float mark + brand
-  g.fillStyle = "#FF6B35"; g.fillRect(X, 64, 10, 40); g.fillStyle = "#fff"; g.beginPath(); g.moveTo(X - 2, 150); g.lineTo(X + 1, 104); g.lineTo(X + 9, 104); g.lineTo(X + 12, 150); g.closePath(); g.fill();
-  g.font = '600 34px "Figtree", system-ui, sans-serif'; g.fillStyle = "rgba(255,255,255,.92)"; g.textBaseline = "alphabetic"; g.fillText("Waggler", X + 34, 118);
+  cardBrand(g);
   const pbs = pbMap(); const isPb = pbs[c.species] && pbs[c.species].id === c.id;
   if (isPb) { g.font = '700 30px "Figtree", sans-serif'; const t = "PERSONAL BEST", tw = g.measureText(t).width + 44; g.fillStyle = "#FF6B35"; roundRect(g, W - X - tw, 74, tw, 56, 28); g.fill(); g.fillStyle = "#1A0D07"; g.fillText(t, W - X - tw + 22, 113); }
   // text block from the bottom up
@@ -1340,7 +1338,6 @@ function openCatchCard(c) {
 }
 /* ------------------------------------------------------------ share cards */
 const CW = 1080, CH = 1350, CX = 72;
-const appLink = () => (typeof APP_URL === "string" ? APP_URL : "");
 const spImgCache = {};
 function speciesImg(sp) {
   const src = spPhoto(sp); if (!src) return Promise.resolve(null);
@@ -1349,9 +1346,21 @@ function speciesImg(sp) {
 }
 async function cardFonts() { try { await Promise.all([document.fonts.load('700 120px "Bricolage Grotesque"'), document.fonts.load('600 60px "JetBrains Mono"'), document.fonts.load('500 40px "Figtree"'), document.fonts.load('600 40px "Figtree"')]); } catch (e) {} }
 function cardBrand(g) {
-  const X = CX;
-  g.fillStyle = "#FF6B35"; g.fillRect(X, 64, 10, 40); g.fillStyle = "#fff"; g.beginPath(); g.moveTo(X - 2, 150); g.lineTo(X + 1, 104); g.lineTo(X + 9, 104); g.lineTo(X + 12, 150); g.closePath(); g.fill();
-  g.font = '600 34px "Figtree", system-ui, sans-serif'; g.fillStyle = "rgba(255,255,255,.92)"; g.textBaseline = "alphabetic"; g.fillText("Waggler", X + 34, 118);
+  // the Waggler wordmark: "wagg", a leaning float for the "l", then "er"
+  const size = 62, x = CX - 2, base = 122;
+  g.save(); g.textBaseline = "alphabetic"; g.font = `700 ${size}px "Bricolage Grotesque", system-ui, sans-serif`;
+  try { g.letterSpacing = (-0.03 * size) + "px"; } catch (e) {}
+  g.fillStyle = "#fff"; g.fillText("wagg", x, base);
+  const fx = x + g.measureText("wagg").width + 0.01 * size, bh = 1.08 * size, k = bh / 100, top = base + 0.22 * size - bh;
+  g.save(); g.translate(fx, top); g.scale(k, k); g.translate(14, 92); g.rotate(7 * Math.PI / 180); g.translate(-14, -92);
+  g.lineJoin = "round";
+  g.beginPath(); g.arc(14, 92, 4, 0, Math.PI * 2); g.lineWidth = 2.6; g.strokeStyle = "#fff"; g.stroke();
+  const body = new Path2D("M11.2 87.5 L16.8 87.5 L19 31 L9 31Z"); g.fillStyle = "#C9A97A"; g.fill(body); g.lineWidth = 1.8; g.strokeStyle = "#14201A"; g.stroke(body);
+  roundRect(g, 9, 4, 10, 26, 5); g.fillStyle = "#FF6B35"; g.fill(); g.lineWidth = 1.6; g.strokeStyle = "#14201A"; g.stroke();
+  g.fillStyle = "#14201A"; g.fillRect(9, 26.5, 10, 5);
+  g.restore();
+  g.fillStyle = "#fff"; g.fillText("er", fx + 0.35 * size, base);
+  g.restore();
 }
 async function cardBase() {
   await cardFonts();
@@ -1362,16 +1371,15 @@ async function cardBase() {
 }
 function cardFooter(g) {
   g.font = '500 28px "Figtree", system-ui, sans-serif'; g.fillStyle = "rgba(255,255,255,.62)"; g.textBaseline = "alphabetic";
-  const link = appLink().replace(/^https?:\/\//, "").replace(/\/$/, "");
-  g.fillText(fit(g, link ? "Logged with Waggler · " + link : "Logged with Waggler", CW - 2 * CX), CX, CH - 52);
+  g.fillText("Logged with Waggler", CX, CH - 52);
 }
 function cardBlob(cv) { return new Promise((ok, no) => { try { cv.toBlob(b => b ? ok(b) : no(new Error("encode")), "image/jpeg", 0.92); } catch (e) { no(e); } }); }
 async function cardFish(g, sp, x, y, w, h, opts = {}) {
   g.save(); g.fillStyle = opts.faded ? "rgba(255,255,255,.07)" : "#D3E5E0"; roundRect(g, x, y, w, h, opts.r || 18); g.fill(); g.restore();
   const im = await speciesImg(sp); if (!im) return;
-  const pad = opts.pad ?? Math.round(w * 0.04), iw = w - 2 * pad, ih = iw * 180 / 320;
+  const pad = opts.pad ?? Math.round(w * 0.04), iw = Math.min(w - 2 * pad, (h - 2 * Math.max(16, pad * 0.5)) * 320 / 180), ih = iw * 180 / 320;
   g.save(); if (opts.faded) { g.globalAlpha = 0.28; try { g.filter = "grayscale(1)"; } catch (e) {} }
-  g.drawImage(im, x + pad, y + (h - ih) / 2, iw, ih); g.restore();
+  g.drawImage(im, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih); g.restore();
 }
 function cardPill(g, t) { g.font = '700 30px "Figtree", sans-serif'; const tw = g.measureText(t).width + 44; g.fillStyle = "#FF6B35"; roundRect(g, CW - CX - tw, 74, tw, 56, 28); g.fill(); g.fillStyle = "#1A0D07"; g.fillText(t, CW - CX - tw + 22, 113); }
 function bigText(g, s, size, min, font, colour, x, y, maxW) {
@@ -1483,7 +1491,7 @@ function openShareCard({ title, file, text, draw, venueOption }) {
   entry.el.addEventListener("change", e => { if (e.target.matches('[data-cc="venue"]')) { showVenue = e.target.checked; go(); } });
   entry.el.addEventListener("click", async e => {
     const b = e.target.closest('[data-cc="save"],[data-cc="share"]'); if (!b || !blob) return;
-    const msg = text + (appLink() ? "\nLogged with Waggler: " + appLink() : "");
+    const msg = text + "\nLogged with Waggler";
     if (b.dataset.cc === "share") {
       try { if (!(await shareFile(file, blob, msg))) { await S.downloads.save({ filename: file, data: blob }); toast("Sharing isn't available, so the image was saved instead"); } }
       catch (er) { if (er && er.name !== "AbortError") toast("Couldn't share the image."); }
