@@ -1945,7 +1945,7 @@ function iosBanner() {
   return `<div class="banner"><p><b>On iPhone?</b> Tap the Share button in Safari, then <b>Add to Home Screen</b>. Waggler then opens like an app, works with no signal, and Safari keeps your catches safe.</p><button class="btn small" data-act="hide-ios">Got it</button></div>`;
 }
 function privacyText() {
-  return IS_APP ? "Your catches, photos and venues are stored on this phone only. Waggler doesn't send them to anyone. The only things that leave your phone are a catch's location, sent to Open-Meteo to look up the weather, and requests for the app's fonts."
+  return IS_APP ? "Your catches, photos and venues are stored on this phone only. Waggler doesn't send them to anyone. The only things that leave your phone are a catch's location, sent to Open-Meteo to look up the weather, and requests for the app's fonts. To see how many people use Waggler, visits are counted with Cloudflare Web Analytics, and the first time you open Waggler on a phone it's counted once as a new angler. Cloudflare says this doesn't use cookies or track you as a person. It never sees your catches, photos or venues."
     : "Your catches, photos and venues are saved to your Claude account and only you can see them.";
 }
 function feedbackHref() {
@@ -2276,6 +2276,15 @@ async function maybeAskBackup() {
 }
 function backupWatch() { let tries = 0; const t = setInterval(() => { tries++; if (S.settingsLoaded && S.loaded.catches && S.loaded.sessions) { clearInterval(t); setTimeout(maybeAskBackup, 1200); } else if (tries > 40) clearInterval(t); }, 250); }
 backupWatch();
+// count this phone once as a new angler: loads new.html in a hidden frame, which Cloudflare counts as one page view
+function countNewAngler() {
+  if (S.settings.countedNew || !navigator.onLine) return;
+  const f = document.createElement("iframe"); f.src = "new.html"; f.title = ""; f.setAttribute("aria-hidden", "true"); f.tabIndex = -1;
+  f.style.cssText = "position:absolute;width:1px;height:1px;border:0;left:-9999px";
+  document.body.appendChild(f); setTimeout(() => f.remove(), 15000);
+  saveSettings({ countedNew: true });
+}
+{ let n = 0; const t = setInterval(() => { n++; if (S.settingsLoaded) { clearInterval(t); setTimeout(countNewAngler, 2500); } else if (n > 40) clearInterval(t); }, 250); }
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") setTimeout(maybeAskBackup, 800); });
 document.addEventListener("change", async e => {
   if (e.target.id === "ask-backup") { saveSettings({ askBackup: e.target.checked }); return; }
@@ -2347,5 +2356,6 @@ render();
 })();
 </script>
 
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "49f6bdfb48e942d8a9fe77d3063d4d3f"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>
