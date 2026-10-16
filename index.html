@@ -223,6 +223,21 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;
 .facts div.full{grid-column:1/-1}
 .actions{display:flex;gap:10px;flex-wrap:wrap}
 .cc-prev{min-height:120px}
+#f-wrap{display:flex;flex-direction:column;gap:18px;min-width:0}
+fieldset{min-width:0}
+.qmode .qhide{display:none!important}
+.qonly{display:none}.qmode .qonly{display:block}
+.linkbtn{border:0;background:none;padding:6px 0;font:inherit;font-size:14px;font-weight:600;color:var(--water);text-decoration:underline;cursor:pointer;white-space:normal;text-align:left;max-width:100%;min-height:36px}
+.warnline{margin:0;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--warn) 14%,var(--surface));border:1px solid color-mix(in srgb,var(--warn) 40%,var(--line));font-size:14px}
+.warnline a,.banner a{color:inherit;font-weight:600}
+.badgegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+.mbadge{display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:10px 6px;min-width:0;cursor:pointer;color:var(--ink)}
+.mbadge:disabled{cursor:default;opacity:.55}
+.mbadge .medal{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font:700 15px/1 var(--f-display);background:var(--sunk);color:var(--muted);border:2px dashed var(--line)}
+.mbadge.on .medal{background:var(--accent);color:var(--accent-ink);border:3px solid color-mix(in srgb,var(--accent) 55%,var(--surface))}
+.mbadge b{font-size:12.5px;line-height:1.2}
+.mbadge span:last-child{font-size:11px;color:var(--muted);line-height:1.2}
+.share-months{margin-top:12px;display:flex;flex-direction:column;gap:6px}
 .cc-switch{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);cursor:pointer}
 .cc-switch input{width:24px;height:24px;flex:none;margin:2px 0 0;accent-color:var(--accent)}
 .cc-switch>span{display:flex;flex-direction:column;gap:2px}
@@ -355,7 +370,7 @@ function idHtml(sp) {
   const x = SPECIES_INFO[sp]; if (!x) return "";
   return `<div class="idbox"><p>${esc(x.d)}</p><h4>${sp === "Unknown" ? "Common hybrids" : "How to tell"}</h4><ul>${x.f.map(t => `<li>${esc(t)}</li>`).join("")}</ul></div>`;
 }
-const spPhoto = sp => PHOTOS[sp] ? "fish/" + PHOTOS[sp].file + "?v=1.3.1" : null;
+const spPhoto = sp => PHOTOS[sp] ? "fish/" + PHOTOS[sp].file + "?v=1.4.0" : null;
 function creditLine(sp) {
   return PHOTOS[sp] ? "Drawing made for Waggler" : "";
 }
@@ -689,8 +704,8 @@ function caughtMap() {
   for (const c of S.catches) { if (c.example) continue; if (!m[c.species] || (c.when || "") < m[c.species]) m[c.species] = c.when || ""; }
   return m;
 }
-function checklistState() {
-  const logged = caughtMap(), ticked = S.settings.ticked || {};
+function checklistState(scope) {
+  const logged = scope === "year" ? caughtMapYear() : caughtMap(), ticked = scope === "year" ? {} : (S.settings.ticked || {});
   const others = Object.keys(logged).filter(sp => !ALL_SPECIES.includes(sp) && !NOT_LISTED.includes(sp)).sort();
   const all = [...CHECK_SPECIES, ...others];
   const done = all.filter(sp => logged[sp] !== undefined || ticked[sp]);
@@ -716,11 +731,12 @@ function render() {
   const views = { catches: viewCatches, sessions: viewSessions, venues: viewVenues, records: viewRecords };
   m.innerHTML = (views[S.view] || viewCatches)();
   for (const s of S.stack) if (s.refresh) s.refresh();
+  checkNewMilestones();
 }
 function renderTabs() {
   const t = (k, label, icon) => `<button class="tab" data-tab="${k}" ${S.view === k ? 'aria-current="page"' : ""}>${icon}<span>${label}</span></button>`;
   $("#tabs").innerHTML = t("catches", "Catches", I.list) + t("sessions", "Sessions", I.cal) +
-    `<button class="tab add" data-act="new-catch" aria-label="Log a catch"><span class="plus">${I.plus}</span><span>Log</span></button>` +
+    `<button class="tab add" data-act="quick-log" aria-label="Quick log a catch"><span class="plus">${I.plus}</span><span>Log</span></button>` +
     t("venues", "Venues", I.pin) + t("records", "Records", I.trophy);
   $("#subtitle").textContent = { catches: "Catches", sessions: "Sessions", venues: "Venues", records: "Records & stats" }[S.view];
 }
@@ -741,6 +757,7 @@ function topBanners() {
     if (days < 0) h += `<div class="banner bad"><p><b>${esc(l.name)}</b> expired on ${fmtDate(l.expires)}.</p><button class="btn small" data-act="licences">Update</button></div>`;
     else if (days <= 30) h += `<div class="banner warn"><p><b>${esc(l.name)}</b> runs out in ${days} day${days === 1 ? "" : "s"} (${fmtShort(l.expires)}).</p><button class="btn small" data-act="licences">Update</button></div>`;
   }
+  h += closeSeasonBanner();
   if (S.catches.length && (!S.settings.lastBackup || (Date.now() - parseLocal(S.settings.lastBackup)) / 864e5 > 30)) h += `<div class="banner warn"><p>${S.settings.lastBackup ? "It's over a month since your last backup." : "Your catches are only on this phone."} Back up so you don't lose them.</p><button class="btn small" data-act="backup">Back up now</button></div>`;
   if (hasExamples()) h += `<div class="banner"><p>The entries marked <b>Example</b> show how the log fills up. Remove them when you're ready to start.</p><button class="btn small" data-act="clear-examples">Remove examples</button></div>`;
   return h;
@@ -838,7 +855,9 @@ function viewRecords() {
   { const st = checklistState(); const pct = Math.round(st.done.length / st.all.length * 100);
     h += `<button class="panel cl-sum" data-act="checklist"><div class="section-h"><h3 style="margin:0">Species checklist</h3><span class="num">${st.done.length} / ${st.all.length}</span></div>
       <div class="meter" role="img" aria-label="${st.done.length} of ${st.all.length} species caught"><i style="width:${pct}%"></i></div>
-      <span class="hint">${st.done.length ? "Tap to see what's left and tick off species you caught before using Waggler." : "Tick off every species you've ever caught."}</span></button>`; }
+      <span class="hint">${Object.keys(caughtMapYear()).length} species so far in ${new Date().getFullYear()}. ${st.done.length ? "Tap to see what's left." : "Tick off every species you've ever caught."}</span></button>`; }
+  { const d = insightsData(""); h += `<button class="panel cl-sum" data-act="insights"><div class="section-h"><h3 style="margin:0">Your best conditions</h3></div>
+      <span class="hint">${d.factors.length ? `Patterns from ${d.all} sessions: pressure, wind, sky, temperature and moon. Tap to see them.` : `Shows your patterns once you've logged 5 sessions with the weather. You have ${d.sessions}.`}</span></button>`; }
   const pbs = Object.values(pbMap()).sort((a, b) => b.weightOz - a.weightOz);
   h += `<div class="panel"><div class="section-h" style="margin-bottom:10px"><h3 style="margin:0">Personal bests</h3>${pbs.length ? `<button class="btn small" data-share="pbs">${I.image} Share</button>` : ""}</div>`;
   if (!pbs.length) h += `<p class="muted" style="margin:0">Your heaviest fish of each species appear here once you log weights.</p>`;
@@ -846,6 +865,7 @@ function viewRecords() {
     pbs.map(c => `<tr data-open-catch="${esc(c.id)}" data-open><td><b>${esc(c.species)}</b></td><td class="r num">${esc(fmtWeight(c.weightOz))}</td><td>${esc(venueName(c))}</td><td class="r">${esc(fmtShort(c.when))} ${(c.when || "").slice(2,4) ? "’" + (c.when || "").slice(2,4) : ""}</td></tr>`).join("") + `</tbody></table></div>`;
   h += `</div>`;
 
+  h += milestonesPanel();
   if (S.catches.length) {
     const total = S.catches.reduce((a, c) => a + (c.weightOz || 0), 0);
     h += `<div class="season"><div><b>${S.catches.length}</b><span>Fish logged</span></div><div><b>${new Set(S.catches.map(c => c.species)).size}</b><span>Species</span></div><div><b>${esc(fmtWeight(total)) || "–"}</b><span>Total weight</span></div></div>`;
@@ -855,7 +875,8 @@ function viewRecords() {
     const mc = months.map(([k]) => S.catches.filter(c => (c.when || "").startsWith(k)).length);
     const mmax = Math.max(1, ...mc);
     h += `<div class="panel"><h3>Fish per month</h3><div class="bars" role="img" aria-label="Fish caught per month over the last 12 months">` +
-      months.map(([k, l], i) => `<div class="bar"><em>${mc[i] || ""}</em><i class="${mc[i] === mmax && mc.filter(x => x === mmax).length === 1 ? "hi" : ""}" style="height:${mc[i] / mmax * 82}%"></i><span>${l}</span></div>`).join("") + `</div></div>`;
+      months.map(([k, l], i) => `<div class="bar"><em>${mc[i] || ""}</em><i class="${mc[i] === mmax && mc.filter(x => x === mmax).length === 1 ? "hi" : ""}" style="height:${mc[i] / mmax * 82}%"></i><span>${l}</span></div>`).join("") + `</div>` +
+      (() => { const ms = months.map(([k]) => k).filter((k, i) => mc[i]).reverse().slice(0, 6); return ms.length ? `<div class="share-months"><span class="hint">Monthly recap card:</span><div class="chips">${ms.map(k => `<button class="chip" data-share="month" data-arg="${k}">${I.image} ${MON3[+k.slice(5) - 1]} ${k.slice(0, 4)}</button>`).join("")}</div></div>` : ""; })() + `</div>`;
     // by hour
     const hours = Array.from({ length: 24 }, (_, i) => i);
     const hc = hours.map(hr => S.catches.filter(c => fmtTime(c.when) && +fmtTime(c.when).slice(0,2) === hr).length);
@@ -880,10 +901,11 @@ function viewRecords() {
     `<div class="actions" style="margin-top:10px"><button class="btn small" data-act="licences">${I.edit} Edit</button></div></div>`;
   h += `<div class="panel"><h3>Settings</h3><div class="actions">
     <div class="chips" role="group" aria-label="Weight units"><button class="chip" data-units="lboz" aria-pressed="${S.settings.units !== "kg"}">lb & oz</button><button class="chip" data-units="kg" aria-pressed="${S.settings.units === "kg"}">kg</button></div>
+    <button class="btn small" data-act="sling">Weigh sling: ${S.settings.slingOz ? esc(fmtWeight(S.settings.slingOz)) : "not set"}</button>
     <button class="btn small" data-act="export">${I.dl} Export catches (CSV)</button></div></div>`;
   h += `<div class="panel"><h3>Backup</h3><p class="hint" style="margin:0 0 10px">Your log is stored on this phone only. A backup file holds every catch and photo. Keep a copy in Google Drive or email it to yourself.${S.settings.lastBackup ? " Last backup: " + esc(fmtDate(S.settings.lastBackup)) + "." : ""}</p>
     <div class="actions"><button class="btn small primary" data-act="backup">${I.dl} Back up now</button><button class="btn small" data-act="restore">Restore from a backup</button><input type="file" id="restore-file" accept=".json,application/json" class="sr" tabindex="-1" aria-hidden="true"></div>
-    <p class="hint" style="margin:10px 0 0">Waggler ${"1.3.1"} · runs on your phone · ${WX_CREDIT}</p></div>`;
+    <p class="hint" style="margin:10px 0 0">Waggler ${"1.4.0"} · runs on your phone · ${WX_CREDIT}</p></div>`;
   return h;
 }
 
@@ -973,7 +995,7 @@ function nearestVenue(lat, lon) {
 }
 
 /* ------------------------------------------------------------ catch form */
-function openCatchForm(existing) {
+function openCatchForm(existing, opts = {}) {
   if (S.status !== "ready") { toast("Your log isn't open yet."); return; }
   const c = existing ? { ...existing } : { released: true, when: nowLocal() };
   const F = { photos: (c.photos || []).map(id => ({ id, url: photoUrl(id) })), loc: c.lat != null ? { lat: c.lat, lon: c.lon, source: c.locSource || "saved" } : null, idCtl: null };
@@ -982,7 +1004,7 @@ function openCatchForm(existing) {
   const kg = S.settings.units === "kg";
   const lb = c.weightOz ? Math.floor(c.weightOz / 16) : "", oz = c.weightOz ? Math.round((c.weightOz - Math.floor(c.weightOz / 16) * 16) * 10) / 10 : "";
   const body = `
-    <fieldset><legend>Photos</legend>
+    <fieldset class="qhide"><legend>Photos</legend>
       <div class="photos" id="f-photos"></div>
       <div class="phbtns" id="f-phbtns"><button type="button" class="btn" id="f-cam">${I.camera} Take photo</button><button type="button" class="btn" id="f-lib">${I.image} Choose photo</button></div>
       <input type="file" accept="image/*" capture="environment" id="f-file-cam" class="sr" tabindex="-1" aria-hidden="true">
@@ -990,6 +1012,8 @@ function openCatchForm(existing) {
       <p class="hint" style="margin:0">If your phone saves location in photos, Waggler reads where and when the fish was caught from the first photo.</p>
     </fieldset>
     <fieldset><legend>Fish</legend>
+      <div class="qonly"><p class="hint" style="margin:0">Time, place and weather are filled in for you.</p><button type="button" class="linkbtn" id="f-more">Add photos and more details</button></div>
+      <p class="warnline" id="f-cs" hidden></p>
       ${recent.length ? `<div class="chips" id="f-recent" aria-label="Recent species">${recent.map(s => `<button type="button" class="chip" data-sp="${esc(s)}">${esc(s)}</button>`).join("")}</div>` : ""}
       <div class="field"><label for="f-species">Species</label>
         <select id="f-species"><option value="">Choose a species</option>${Object.entries(SPECIES).map(([g, l]) => `<optgroup label="${g}">${l.map(s => `<option ${c.species === s ? "selected" : ""}>${s}</option>`).join("")}</optgroup>`).join("")}<option value="__other" ${isOther ? "selected" : ""}>Other species…</option></select>
@@ -1001,10 +1025,11 @@ function openCatchForm(existing) {
         <div class="field"><label for="f-len">Length</label><div class="unit"><input id="f-len" type="text" inputmode="decimal" value="${c.lengthCm ?? ""}"><span>cm</span></div></div></div>`
       : `<div class="grid3 weight-big"><div class="field"><label for="f-lb">Pounds</label><div class="unit"><input id="f-lb" type="text" inputmode="numeric" value="${lb}"><span>lb</span></div></div>
         <div class="field"><label for="f-oz">Ounces</label><div class="unit"><input id="f-oz" type="text" inputmode="decimal" value="${oz}"><span>oz</span></div></div>
-        <div class="field"><label for="f-len">Length</label><div class="unit"><input id="f-len" type="text" inputmode="decimal" value="${c.lengthCm ?? ""}"><span>cm</span></div></div></div>`}
+        <div class="field qhide"><label for="f-len">Length</label><div class="unit"><input id="f-len" type="text" inputmode="decimal" value="${c.lengthCm ?? ""}"><span>cm</span></div></div></div>`}
+      ${S.settings.slingOz ? `<label class="toggle"><input type="checkbox" id="f-sling" ${existing ? "" : "checked"}> Weighed in my sling (takes off ${esc(fmtWeight(S.settings.slingOz))})</label><span class="hint" id="f-net" style="margin-top:-6px"></span>` : ""}
       <label class="toggle"><input type="checkbox" id="f-released" ${c.released !== false ? "checked" : ""}> Returned to the water</label>
     </fieldset>
-    <fieldset><legend>Where and when</legend>
+    <fieldset class="qhide"><legend>Where and when</legend>
       <div class="field"><label for="f-when">Caught at</label><input id="f-when" type="datetime-local" value="${esc(c.when || nowLocal())}"></div>
       <div class="field"><label for="f-venue">Venue</label><select id="f-venue">${venueOptions(c.venueId)}</select></div>
       <div class="field" id="f-newvenue-w" hidden><label for="f-newvenue">New venue name</label><input id="f-newvenue" type="text" autocomplete="off"><span class="hint">Saved with this catch's location, if it has one.</span></div>
@@ -1013,20 +1038,33 @@ function openCatchForm(existing) {
       <button type="button" class="btn small" id="f-gps">${I.pin} Use my location</button>
       <div class="field"><label for="f-coords">Paste a location</label><input id="f-coords" type="text" placeholder="53.6818, -1.4986 or a Google Maps link" autocomplete="off"><span class="hint">In Google Maps, press and hold the spot, then copy the numbers it shows.</span></div>
     </fieldset>
-    <fieldset><legend>Tackle</legend>
+    <fieldset class="qhide"><legend>Tackle</legend>
       <div class="field"><label for="f-method">Method</label><select id="f-method"><option value="">–</option>${METHODS.map(m => `<option ${c.method === m ? "selected" : ""}>${m}</option>`).join("")}${c.method && !METHODS.includes(c.method) ? `<option selected>${esc(c.method)}</option>` : ""}</select></div>
       <div class="field"><label for="f-bait">Bait</label><input id="f-bait" type="text" value="${esc(c.bait || "")}" autocomplete="off">
         <div class="chips" id="f-baits">${BAITS.map(b => `<button type="button" class="chip" data-bait="${b}">${b}</button>`).join("")}</div></div>
       <div class="field"><label for="f-rig">Rig, hook, line</label><input id="f-rig" type="text" value="${esc(c.rig || "")}" placeholder="e.g. size 16, 4 lb hooklength"></div>
     </fieldset>
-    <div class="wxrow"><button type="button" class="btn small" id="f-wx">${I.cloud} Fill in the weather</button><span class="hint" id="f-wx-note"></span></div>
-    <div id="f-cond">${condFields(c.cond || {})}</div>
-    <p class="hint" id="f-cond-note" style="margin:-8px 0 0"></p>
-    <div class="field"><label for="f-notes">Notes</label><textarea id="f-notes" placeholder="How it fought, where it came from, anything to remember">${esc(c.notes || "")}</textarea></div>`;
+    <div class="wxrow qhide"><button type="button" class="btn small" id="f-wx">${I.cloud} Fill in the weather</button><span class="hint" id="f-wx-note"></span></div>
+    <div id="f-cond" class="qhide">${condFields(c.cond || {})}</div>
+    <p class="hint qhide" id="f-cond-note" style="margin:-8px 0 0"></p>
+    <div class="field qhide"><label for="f-notes">Notes</label><textarea id="f-notes" placeholder="How it fought, where it came from, anything to remember">${esc(c.notes || "")}</textarea></div>`;
   const foot = `${existing ? `<button class="btn danger" id="f-del">Delete</button>` : ""}<span class="grow"></span><button class="btn ghost" data-close>Cancel</button><button class="btn primary" id="f-save">Save catch</button>`;
 
-  openSheet({ title: existing ? "Edit catch" : "Log a catch", body, foot, onMount(el, entry) {
+  openSheet({ title: existing ? "Edit catch" : opts.quick ? "Quick log" : "Log a catch", body: `<div id="f-wrap" class="${opts.quick ? "qmode" : ""}">${body}</div>`, foot, onMount(el, entry) {
     wireChips(el);
+    $("#f-more", el)?.addEventListener("click", () => { $("#f-wrap", el).classList.remove("qmode"); $(".sheet-head h2", entry.el).textContent = "Log a catch"; });
+    // weigh sling: show the fish's own weight as you type
+    const grossOz = () => { if (kg) { const k = num($("#f-kg", el).value); return k ? k / 0.028349523 : null; } const l = num($("#f-lb", el).value) || 0, o = num($("#f-oz", el).value) || 0; return l || o ? l * 16 + o : null; };
+    const drawNet = () => { const n = $("#f-net", el); if (!n) return; const gw = grossOz(); n.textContent = $("#f-sling", el).checked && gw ? (gw > S.settings.slingOz ? "Fish weight: " + fmtWeight(Math.round((gw - S.settings.slingOz) * 10) / 10) : "That's no more than your sling weighs.") : ""; };
+    el.addEventListener("input", e => { if (e.target.closest(".weight-big")) drawNet(); });
+    $("#f-sling", el)?.addEventListener("change", drawNet);
+    // river close season reminder
+    const csCheck = () => {
+      const w = $("#f-cs", el), v = venueById($("#f-venue", el).value), d = parseLocal(($("#f-when", el).value || nowLocal()).slice(0, 10)), sp = $("#f-species", el).value;
+      const show = v && v.water === "river" && d && inCloseSeason(d) && !SPECIES.Game.includes(sp);
+      w.hidden = !show; if (show) w.innerHTML = `This date is in the river close season, when coarse fishing on rivers isn't allowed in England and Wales (15 March to 15 June). <a href="${CS_LINK}" target="_blank" rel="noopener">GOV.UK rules</a>`;
+    };
+    el.addEventListener("change", e => { if (["f-venue", "f-when", "f-species"].includes(e.target.id)) csCheck(); });
     const condTouched = { v: !!existing };
     $("#f-cond", el).addEventListener("click", e => { if (e.target.closest(".chip")) condTouched.v = true; });
     $("#f-cond", el).addEventListener("input", () => condTouched.v = true);
@@ -1103,7 +1141,7 @@ function openCatchForm(existing) {
       const today = nowLocal().slice(0, 10);
       const s = [...S.sessions].filter(x => x.date === today).sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""))[0];
       if (s && s.venueId) { venueSel.value = s.venueId; if (s.peg) $("#f-peg", el).value = s.peg; onVenue(); }
-      gpsAllowed().then(ok => { if (ok && (!F.loc || F.loc.source === "venue")) $("#f-gps", el).click(); });
+      gpsAllowed().then(ok => { if ((ok || opts.quick) && (!F.loc || F.loc.source === "venue")) $("#f-gps", el).click(); });
     } else fillCondFromSession();
 
     const speciesSel = $("#f-species", el);
@@ -1113,7 +1151,7 @@ function openCatchForm(existing) {
       if (src) box.innerHTML = `<button type="button" class="idbtn" data-idsp="${esc(sp)}" aria-label="ID tips for ${esc(sp.toLowerCase())}"><img src="${esc(src)}" alt="A ${esc(sp.toLowerCase())}"></button><div><b>${esc(sp)}</b><span class="hint">Tap the drawing for ID tips</span></div>`;
     };
     speciesSel.addEventListener("change", () => { $("#f-other-w", el).hidden = speciesSel.value !== "__other"; drawRef(); });
-    drawRef();
+    drawRef(); csCheck();
     el.addEventListener("click", e => {
       const sp = e.target.closest("[data-sp]"); if (sp) { speciesSel.value = sp.dataset.sp; $("#f-other-w", el).hidden = true; drawRef(); }
       const bt = e.target.closest("[data-bait]"); if (bt) { const inp = $("#f-bait", el); const cur = inp.value.trim(); inp.value = cur ? (cur.toLowerCase().includes(bt.dataset.bait.toLowerCase()) ? cur : cur + ", " + bt.dataset.bait.toLowerCase()) : bt.dataset.bait; }
@@ -1183,6 +1221,11 @@ function openCatchForm(existing) {
       if (kg) { const k = num($("#f-kg", el).value); if (k) weightOz = Math.round(k / 0.028349523 * 10) / 10; }
       else { const l = num($("#f-lb", el).value) || 0, o = num($("#f-oz", el).value) || 0; if (l || o) weightOz = Math.round((l * 16 + o) * 10) / 10; }
       if (!kg && num($("#f-oz", el).value) >= 16) { toast("Ounces go up to 15. Put whole pounds in the pounds box."); return; }
+      let tareOz = null;
+      if (weightOz && $("#f-sling", el)?.checked) {
+        if (weightOz <= S.settings.slingOz) { toast("That's no more than your sling weighs. Untick the sling box or check the weight."); return; }
+        tareOz = S.settings.slingOz; weightOz = Math.round((weightOz - tareOz) * 10) / 10;
+      }
       const when = $("#f-when", el).value || nowLocal();
       btn.disabled = true; btn.innerHTML = `<span class="spin"></span> Saving`;
       try {
@@ -1220,7 +1263,7 @@ function openCatchForm(existing) {
           await write(() => col("sessions").doc(s.id).update({ cond, updatedAt: new Date().toISOString() }));
         }
         const doc = {
-          species, weightOz, lengthCm: num($("#f-len", el).value), released: $("#f-released", el).checked, when,
+          species, weightOz, tareOz: tareOz ?? existing?.tareOz ?? null, lengthCm: num($("#f-len", el).value), released: $("#f-released", el).checked, when,
           venueId, venueName: vName, sessionId: s.id, peg: peg || null,
           method: $("#f-method", el).value || null, bait: $("#f-bait", el).value.trim() || null, rig: $("#f-rig", el).value.trim() || null,
           cond, notes: $("#f-notes", el).value.trim() || null, photos: ids,
@@ -1231,6 +1274,10 @@ function openCatchForm(existing) {
         const ref = existing ? col("catches").doc(existing.id) : col("catches").doc(uid());
         const prevPb = pbMap()[species];
         await write(() => ref.set(doc));
+        // quick saves can beat the weather lookup: fetch it afterwards when there's a location
+        if (!Object.keys(cond).length && doc.lat != null && typeof getWeather === "function" && navigator.onLine) {
+          const rid = ref.id; getWeather(doc.lat, doc.lon, when).then(w => write(() => col("catches").doc(rid).update({ cond: w.cond }))).catch(() => {});
+        }
         for (const id of F.removed || []) S.assets?.delete(id).catch(() => {});
         closeSheet(entry);
         const isPb = !!(weightOz && prevPb && prevPb.id !== existing?.id && weightOz > prevPb.weightOz);
@@ -1388,13 +1435,13 @@ function bigText(g, s, size, min, font, colour, x, y, maxW) {
   g.fillStyle = colour; g.fillText(fit(g, s, maxW), x, y);
 }
 
-async function drawSpeciesCard() {
-  const { cv, g } = await cardBase(); const st = checklistState();
+async function drawSpeciesCard(scope) {
+  const { cv, g } = await cardBase(); const st = checklistState(scope);
   const n = st.done.length, total = st.all.length;
   g.font = '700 190px "Bricolage Grotesque", system-ui, sans-serif'; g.fillStyle = "#fff"; g.fillText(String(n), CX - 6, 330);
   const nw = g.measureText(String(n)).width;
   g.font = '600 76px "Figtree", sans-serif'; g.fillStyle = "rgba(255,255,255,.7)"; g.fillText("/ " + total, CX + nw + 18, 330);
-  g.font = '500 40px "Figtree", sans-serif'; g.fillStyle = "rgba(255,255,255,.9)"; g.fillText("species caught", CX, 392);
+  g.font = '500 40px "Figtree", sans-serif'; g.fillStyle = "rgba(255,255,255,.9)"; g.fillText(scope === "year" ? `species caught in ${new Date().getFullYear()}` : "species caught", CX, 392);
   g.fillStyle = "rgba(255,255,255,.14)"; roundRect(g, CX, 422, CW - 2 * CX, 18, 9); g.fill();
   g.fillStyle = "#FF6B35"; roundRect(g, CX, 422, Math.max(18, (CW - 2 * CX) * n / total), 18, 9); g.fill();
   const cols = 6, gap = 12, cw = (CW - 2 * CX - gap * (cols - 1)) / cols, ch = Math.round(cw * 0.6), rowH = ch + 34;
@@ -1503,10 +1550,218 @@ function openShareCard({ title, file, text, draw, venueOption }) {
 }
 function openShareFor(kind, arg) {
   const day = nowLocal().slice(0, 10);
-  if (kind === "species") { const st = checklistState(); openShareCard({ title: "Species card", file: `waggler-species-${day}.jpg`, text: `${st.done.length} of ${st.all.length} species caught`, draw: () => drawSpeciesCard() }); }
+  if (kind === "species") { const sc = arg === "year" ? "year" : ""; const st = checklistState(sc); openShareCard({ title: "Species card", file: `waggler-species-${sc ? "year-" : ""}${day}.jpg`, text: `${st.done.length} of ${st.all.length} species caught${sc ? " in " + new Date().getFullYear() : ""}`, draw: () => drawSpeciesCard(sc) }); }
+  else if (kind === "badge") { const m = milestones().find(x => x.id === arg && x.done); if (!m) return; openShareCard({ title: "Milestone card", file: `waggler-${m.id}.jpg`, text: `Milestone: ${m.title}`, draw: () => drawBadgeCard(m) }); }
+  else if (kind === "month") { const n = S.catches.filter(c => !c.example && (c.when || "").startsWith(arg)).length; openShareCard({ title: "Monthly recap", file: `waggler-${arg}.jpg`, text: `${monthLabel(arg)}: ${n} fish`, draw: o => drawMonthCard(arg, o), venueOption: true }); }
   else if (kind === "pbs") openShareCard({ title: "Personal bests card", file: `waggler-pbs-${day}.jpg`, text: "My personal bests", draw: () => drawPbsCard() });
   else if (kind === "pb") { const c = pbMap()[arg]; if (!c) return; openShareCard({ title: "PB card", file: `${arg.replace(/[^A-Za-z0-9]+/g, "-").toLowerCase()}-pb.jpg`, text: `My ${arg.toLowerCase()} PB: ${fmtWeight(c.weightOz)}`, draw: o => drawPbCard(c, o), venueOption: true }); }
   else if (kind === "session") { const s = sessionById(arg); if (!s) return; const st = sessionStats(s); openShareCard({ title: "Session card", file: `waggler-session-${s.date}.jpg`, text: `${st.n} fish${st.total ? ", " + fmtWeight(st.total) : ""} on ${fmtDate(s.date)}`, draw: o => drawSessionCard(s, o), venueOption: true }); }
+}
+
+/* ------------------------------------------------------------ weigh sling */
+function openSling() {
+  const kg = S.settings.units === "kg", s = S.settings.slingOz || 0;
+  const lb = s ? Math.floor(s / 16) : "", oz = s ? Math.round((s - Math.floor(s / 16) * 16) * 10) / 10 : "";
+  const body = `<p class="hint" style="margin:0">Weigh your empty sling once (wet, as it would be after a fish) and enter it here. When you log a catch, Waggler takes it off for you.</p>
+    ${kg ? `<div class="field"><label for="sl-kg">Sling weight</label><div class="unit"><input id="sl-kg" type="text" inputmode="decimal" value="${s ? (s * 0.028349523).toFixed(2) : ""}"><span>kg</span></div></div>`
+      : `<div class="grid2"><div class="field"><label for="sl-lb">Pounds</label><div class="unit"><input id="sl-lb" type="text" inputmode="numeric" value="${lb}"><span>lb</span></div></div>
+         <div class="field"><label for="sl-oz">Ounces</label><div class="unit"><input id="sl-oz" type="text" inputmode="decimal" value="${oz}"><span>oz</span></div></div></div>`}`;
+  const foot = `${s ? `<button class="btn ghost" id="sl-clear">Clear</button>` : ""}<span class="grow"></span><button class="btn ghost" data-close>Cancel</button><button class="btn primary" id="sl-save">Save</button>`;
+  openSheet({ title: "Weigh sling", body, foot, onMount(el, entry) {
+    $("#sl-clear", el)?.addEventListener("click", async () => { await saveSettings({ slingOz: null }); closeSheet(entry); render(); toast("Sling weight cleared"); });
+    $("#sl-save", el).addEventListener("click", async () => {
+      let v = 0;
+      if (kg) v = (num($("#sl-kg", el).value) || 0) / 0.028349523;
+      else { const o = num($("#sl-oz", el).value) || 0; if (o >= 16) { toast("Ounces go up to 15. Put whole pounds in the pounds box."); return; } v = (num($("#sl-lb", el).value) || 0) * 16 + o; }
+      v = Math.round(v * 10) / 10;
+      if (!(v > 0)) { toast("Enter the sling's weight"); return; }
+      await saveSettings({ slingOz: v }); closeSheet(entry); render(); toast("Sling weight saved: " + fmtWeight(v));
+    });
+  }});
+}
+
+/* --------------------------------------------------------- close season */
+// Coarse fish close season on rivers in England and Wales: 15 March to 15 June (GOV.UK freshwater rod fishing rules)
+function inCloseSeason(d) { const m = d.getMonth() + 1, day = d.getDate(); return (m === 3 && day >= 15) || m === 4 || m === 5 || (m === 6 && day <= 15); }
+function daysToCloseSeason(d) { const t = new Date(d.getFullYear(), 2, 15); const n = Math.round((t - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 864e5); return n; }
+const CS_LINK = "https://www.gov.uk/freshwater-rod-fishing-rules/when-and-where-you-can-fish";
+function closeSeasonBanner() {
+  if (!S.venues.some(v => v.water === "river")) return "";
+  const today = new Date();
+  if (inCloseSeason(today)) return `<div class="banner warn"><p><b>River close season.</b> No coarse fishing on rivers in England and Wales until 15 June. Most stillwaters and canals stay open, and game fishing carries on. Some areas and private waters have their own rules. <a href="${CS_LINK}" target="_blank" rel="noopener">GOV.UK rules</a></p></div>`;
+  const n = daysToCloseSeason(today);
+  if (n > 0 && n <= 14) return `<div class="banner"><p>The river close season for coarse fish starts on 15 March, in ${n} day${n === 1 ? "" : "s"}. <a href="${CS_LINK}" target="_blank" rel="noopener">GOV.UK rules</a></p></div>`;
+  return "";
+}
+const WATER = { river: "River or stream", still: "Lake or pond", canal: "Canal" };
+
+/* --------------------------------------------------------- this year's list */
+function caughtMapYear(year = new Date().getFullYear()) {
+  const m = {};
+  for (const c of S.catches) { if (c.example || !(c.when || "").startsWith(String(year)) || NOT_LISTED.includes(c.species)) continue; if (!m[c.species] || c.when < m[c.species]) m[c.species] = c.when; }
+  return m;
+}
+
+/* ------------------------------------------------------------ milestones */
+const BADGE_SETS = [["predators", "Predator set", ["Pike", "Perch", "Zander"]], ["carp", "Carp set", ["Common carp", "Mirror carp", "Leather carp"]], ["bream", "Bream set", ["Bream", "Skimmer bream", "Silver bream"]]];
+function milestones() {
+  const cs = S.catches.filter(c => !c.example && c.when).sort((a, b) => a.when.localeCompare(b.when));
+  const ticked = Object.keys(S.settings.ticked || {}).filter(sp => !NOT_LISTED.includes(sp));
+  const out = [];
+  const add = (id, glyph, title, desc, have, need, date) => out.push({ id, glyph, title, desc, have: Math.min(have, need), need, done: have >= need, date: have >= need ? date : null });
+  // species, including ones ticked from before Waggler
+  { const seen = new Set(ticked); const hit = {}; for (const t of [5, 10, 15, 20, 25, 30]) if (seen.size >= t) hit[t] = "before";
+    for (const c of cs) { if (NOT_LISTED.includes(c.species)) continue; seen.add(c.species); for (const t of [5, 10, 15, 20, 25, 30]) if (!hit[t] && seen.size >= t) hit[t] = c.when; }
+    for (const t of [5, 10, 15, 20, 25, 30]) add("sp" + t, String(t), `${t} species`, `Catch ${t} different species`, seen.size, t, hit[t]); }
+  // fish logged
+  for (const [t, title] of [[1, "First fish"], [10, "10 fish"], [50, "50 fish"], [100, "100 fish"], [250, "250 fish"], [500, "500 fish"]])
+    add("fish" + t, String(t), title, t === 1 ? "Log your first catch" : `Log ${t} fish`, cs.length, t, cs[t - 1]?.when);
+  // big fish
+  for (const [oz, id, title] of [[160, "w10", "Double figures"], [320, "w20", "Twenty pounder"], [480, "w30", "Thirty pounder"]]) {
+    const c = cs.find(x => x.weightOz >= oz); const best = Math.max(0, ...cs.map(x => x.weightOz || 0));
+    add(id, `${oz / 16}lb`, title, `A fish of ${oz / 16} lb or more`, c ? 1 : 0, 1, c?.when);
+    out[out.length - 1].progressText = c ? "" : best ? `Best so far ${fmtWeight(best)}` : "";
+  }
+  // sessions with fish
+  { const ss = S.sessions.filter(s => !s.example && S.catches.some(c => c.sessionId === s.id)).sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+    for (const t of [10, 25, 50]) add("ses" + t, String(t), `${t} sessions`, `Catch on ${t} different trips`, ss.length, t, ss[t - 1]?.date); }
+  // venues
+  { const vs = []; for (const c of cs) { const k = c.venueId || c.venueName; if (k && !vs.some(x => x.k === k)) vs.push({ k, when: c.when }); }
+    for (const t of [3, 5, 10]) add("ven" + t, String(t), `${t} venues`, `Catch at ${t} different waters`, vs.length, t, vs[t - 1]?.when); }
+  // best year list
+  { const years = {}; for (const c of cs) { if (NOT_LISTED.includes(c.species)) continue; const y = c.when.slice(0, 4); (years[y] ||= new Map()); if (!years[y].has(c.species)) years[y].set(c.species, c.when); }
+    for (const t of [10, 20]) { let best = 0, date = null; for (const m of Object.values(years)) { best = Math.max(best, m.size); if (m.size >= t) { const d = [...m.values()].sort()[t - 1]; if (!date || d < date) date = d; } }
+      add("yr" + t, String(t), `${t} in a year`, `Catch ${t} species in one calendar year`, best, t, date); } }
+  // early and late
+  { const early = cs.find(c => +fmtTime(c.when).slice(0, 2) < 6), late = cs.find(c => +fmtTime(c.when).slice(0, 2) >= 22);
+    add("early", "AM", "Early bird", "Catch a fish before 6am", early ? 1 : 0, 1, early?.when);
+    add("late", "PM", "Night owl", "Catch a fish after 10pm", late ? 1 : 0, 1, late?.when); }
+  // sets
+  for (const [id, title, list] of BADGE_SETS) {
+    const got = list.filter(sp => ticked.includes(sp) || cs.some(c => c.species === sp));
+    let date = null; if (got.length === list.length) { const ds = list.map(sp => ticked.includes(sp) ? "before" : cs.find(c => c.species === sp).when); date = ds.includes("before") && ds.every(d => d === "before") ? "before" : ds.filter(d => d !== "before").sort().pop(); }
+    add(id, String(list.length), title, list.join(", "), got.length, list.length, date);
+  }
+  return out;
+}
+function badgeDate(m) { return m.date === "before" ? "Before Waggler" : m.date ? fmtDate(m.date.slice(0, 10)) : ""; }
+function checkNewMilestones() {
+  if (S.status !== "ready" || !S.settingsLoaded || !S.loaded?.catches) return;
+  const earned = milestones().filter(m => m.done).map(m => m.id);
+  const seen = S.settings.seenBadges;
+  if (!Array.isArray(seen)) { saveSettings({ seenBadges: earned }); return; }
+  const fresh = earned.filter(id => !seen.includes(id));
+  if (!fresh.length) return;
+  const all = milestones(); const first = all.find(m => m.id === fresh[0]);
+  saveSettings({ seenBadges: [...seen, ...fresh] });
+  setTimeout(() => toast(`Milestone: ${first.title}${fresh.length > 1 ? ` and ${fresh.length - 1} more` : ""}. See Records.`), 1200);
+}
+function milestonesPanel() {
+  const ms = milestones(); const done = ms.filter(m => m.done);
+  return `<div class="panel"><div class="section-h" style="margin-bottom:10px"><h3 style="margin:0">Milestones</h3><span class="num muted">${done.length} / ${ms.length}</span></div>
+    <div class="badgegrid">${ms.map(m => `<button class="mbadge ${m.done ? "on" : ""}" ${m.done ? `data-share="badge" data-arg="${esc(m.id)}"` : "disabled"} aria-label="${esc(m.title)}${m.done ? ", earned. Tap to share" : ", not yet"}">
+      <span class="medal">${esc(m.glyph)}</span><b>${esc(m.title)}</b><span>${m.done ? esc(badgeDate(m)) : m.progressText ? esc(m.progressText) : m.need > 1 ? `${m.have} / ${m.need}` : esc(m.desc)}</span></button>`).join("")}</div>
+    ${done.length ? `<p class="hint" style="margin:10px 0 0">Tap a milestone you've earned to make a card for it.</p>` : ""}</div>`;
+}
+
+/* -------------------------------------------------------- best conditions */
+const MOON4 = n => n.startsWith("New") ? "New moon" : n.startsWith("Full") ? "Full moon" : n.startsWith("Waxing") || n === "First quarter" ? "Waxing" : "Waning";
+const TEMPBAND = t => t < 5 ? "Below 5°C" : t < 10 ? "5 to 9°C" : t < 15 ? "10 to 14°C" : t < 20 ? "15 to 19°C" : "20°C and up";
+function insightsData(species) {
+  const ss = S.sessions.filter(s => !s.example);
+  const fishIn = s => S.catches.filter(c => c.sessionId === s.id && (!species || c.species === species)).length;
+  const withCond = ss.filter(s => s.cond && Object.keys(s.cond).length);
+  const factors = [
+    ["Pressure", s => s.cond?.trend, ["Rising", "Steady", "Falling"]],
+    ["Wind direction", s => s.cond?.windDir, DIRS],
+    ["Wind strength", s => s.cond?.wind, WIND],
+    ["Sky", s => (SKY.find(x => x[0] === s.cond?.sky) || [])[1], SKY.map(x => x[1])],
+    ["Air temperature", s => s.cond?.airC != null ? TEMPBAND(s.cond.airC) : null, ["Below 5°C", "5 to 9°C", "10 to 14°C", "15 to 19°C", "20°C and up"]],
+    ["Moon", s => { const d = parseLocal(s.date); return d ? MOON4(moonPhase(new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12)).name) : null; }, ["New moon", "Waxing", "Full moon", "Waning"]]
+  ];
+  const out = [];
+  for (const [name, get, order] of factors) {
+    const rows = {};
+    for (const s of ss) { const v = get(s); if (!v) continue; (rows[v] ||= { v, n: 0, fish: 0 }); rows[v].n++; rows[v].fish += fishIn(s); }
+    const list = order.map(v => rows[v]).filter(Boolean).map(r => ({ ...r, avg: r.fish / r.n }));
+    const total = list.reduce((a, r) => a + r.n, 0);
+    if (total < 5) continue;
+    const solid = list.filter(r => r.n >= 3);
+    const best = solid.length >= 2 ? solid.reduce((a, r) => r.avg > a.avg ? r : a) : null;
+    out.push({ name, list, total, best });
+  }
+  return { sessions: withCond.length, all: ss.length, factors: out };
+}
+function insightsHtml(species) {
+  const d = insightsData(species);
+  const opts = [...new Set(S.catches.filter(c => !c.example).map(c => c.species))].filter(sp => S.catches.filter(c => c.species === sp).length >= 5).sort();
+  let h = `<p class="hint" style="margin:0">This compares the fish you caught per session in different conditions, using only your own sessions. It shows what has happened so far. It can't tell you why, and patterns firm up as you log more trips.</p>`;
+  if (opts.length) h += `<div class="chips" role="group" aria-label="Species"><button class="chip" data-ins="" aria-pressed="${!species}">All fish</button>${opts.map(sp => `<button class="chip" data-ins="${esc(sp)}" aria-pressed="${species === sp}">${esc(sp)}</button>`).join("")}</div>`;
+  if (!d.factors.length) return h + `<div class="empty"><h3>Not enough sessions yet</h3><p>Patterns show up once you've logged at least 5 sessions with the weather filled in. You have ${d.sessions} so far.</p></div>`;
+  for (const f of d.factors) {
+    const max = Math.max(0.1, ...f.list.map(r => r.avg));
+    h += `<div class="panel"><h3>${esc(f.name)}</h3>
+      ${f.best ? `<p style="margin:0 0 8px"><b>Best so far: ${esc(f.best.v)}</b>, ${f.best.avg.toFixed(1)} ${species ? esc(species.toLowerCase()) : "fish"} per session over ${f.best.n} sessions.</p>` : `<p class="muted" style="margin:0 0 8px">Not enough sessions in each condition to compare yet.</p>`}
+      ${f.list.map(r => `<div class="hbar"><span class="t">${esc(r.v)}</span><span class="track"><i style="width:${Math.max(4, r.avg / max * 100)}%"></i></span><span class="num">${r.avg.toFixed(1)}</span></div><div class="hint" style="margin:-4px 0 6px">${r.n} session${r.n === 1 ? "" : "s"}, ${r.fish} fish</div>`).join("")}</div>`;
+  }
+  return h + `<p class="hint" style="margin:0">Numbers are average fish per session. A condition needs at least 3 sessions before it can be called the best.</p>`;
+}
+function openInsights() {
+  let sp = "";
+  const entry = openSheet({ title: "Your best conditions", body: insightsHtml(sp), onMount(el) {
+    el.addEventListener("click", e => { const b = e.target.closest("[data-ins]"); if (b) { sp = b.dataset.ins; setBody(entry, insightsHtml(sp)); } });
+  }, refresh() { setBody(entry, insightsHtml(sp)); } });
+}
+
+/* -------------------------------------------------------- more share cards */
+async function drawBadgeCard(m) {
+  const { cv, g } = await cardBase();
+  const cx = CW / 2, cy = 560, r = 250;
+  g.beginPath(); g.arc(cx, cy, r + 26, 0, Math.PI * 2); g.fillStyle = "rgba(255,255,255,.08)"; g.fill();
+  g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fillStyle = "#FF6B35"; g.fill();
+  g.beginPath(); g.arc(cx, cy, r - 30, 0, Math.PI * 2); g.lineWidth = 6; g.strokeStyle = "rgba(26,13,7,.35)"; g.stroke();
+  g.fillStyle = "#1A0D07"; g.textAlign = "center";
+  let fs = 210; g.font = `700 ${fs}px "Bricolage Grotesque", system-ui, sans-serif`;
+  while (g.measureText(m.glyph).width > r * 1.4 && fs > 60) { fs -= 10; g.font = `700 ${fs}px "Bricolage Grotesque", system-ui, sans-serif`; }
+  g.fillText(m.glyph, cx, cy + fs * 0.35);
+  g.font = '700 30px "Figtree", sans-serif'; g.fillStyle = "rgba(255,255,255,.75)"; g.fillText("MILESTONE", cx, 912);
+  bigText(g, m.title, 104, 60, '700 SIZEpx "Bricolage Grotesque", system-ui, sans-serif', "#fff", cx, 1020, CW - 2 * CX);
+  g.font = '500 36px "Figtree", sans-serif'; g.fillStyle = "rgba(255,255,255,.85)"; g.fillText(fit(g, m.desc, CW - 2 * CX), cx, 1086);
+  if (m.date) { g.fillStyle = "rgba(255,255,255,.65)"; g.fillText(badgeDate(m), cx, 1140); }
+  g.textAlign = "left"; cardFooter(g); return cardBlob(cv);
+}
+function monthLabel(ym) { const [y, mo] = ym.split("-"); return `${MONTHS[+mo - 1]} ${y}`; }
+async function drawMonthCard(ym, o) {
+  const { cv, g } = await cardBase();
+  const cs = S.catches.filter(c => !c.example && (c.when || "").startsWith(ym));
+  const total = cs.reduce((a, c) => a + (c.weightOz || 0), 0), sp = countBy(cs, "species");
+  const best = cs.reduce((a, c) => (c.weightOz || 0) > (a?.weightOz || 0) ? c : a, null);
+  bigText(g, monthLabel(ym), 96, 56, '700 SIZEpx "Bricolage Grotesque", system-ui, sans-serif', "#fff", CX - 4, 270, CW - 2 * CX);
+  const tiles = [[String(cs.length), "Fish"], [String(sp.length), sp.length === 1 ? "Species" : "Species"], [fmtWeight(total) || "–", "Total weight"]];
+  const tw = (CW - 2 * CX - 40) / 3;
+  tiles.forEach(([v, l], k) => { const x = CX + k * (tw + 20); g.fillStyle = "rgba(255,255,255,.09)"; roundRect(g, x, 310, tw, 160, 24); g.fill();
+    bigText(g, v, 60, 26, '600 SIZEpx "JetBrains Mono", ui-monospace, monospace', k === 2 ? "#FF6B35" : "#fff", x + 22, 398, tw - 40);
+    g.font = '500 26px "Figtree", sans-serif'; g.fillStyle = "rgba(255,255,255,.7)"; g.fillText(l, x + 22, 444); });
+  if (best && best.weightOz) {
+    await cardFish(g, best.species, CX, 510, 300, 169, { r: 18, pad: 12 });
+    g.font = '600 26px "Figtree", sans-serif'; g.fillStyle = "rgba(255,255,255,.7)"; g.fillText("BEST FISH", CX + 330, 560);
+    bigText(g, best.species, 56, 34, '700 SIZEpx "Bricolage Grotesque", sans-serif', "#fff", CX + 330, 622, CW - 2 * CX - 330);
+    g.font = '600 50px "JetBrains Mono", ui-monospace, monospace'; g.fillStyle = "#FF6B35"; g.fillText(fmtWeight(best.weightOz), CX + 330, 676);
+  }
+  const fw = (CW - 2 * CX - 60) / 4, fh = Math.round(fw * 0.56);
+  const show = sp.slice(0, 8);
+  for (let k = 0; k < show.length; k++) {
+    const [s, n] = show[k], x = CX + (k % 4) * (fw + 20), y = 730 + Math.floor(k / 4) * (fh + 56);
+    await cardFish(g, s, x, y, fw, fh, { r: 14, pad: 8 });
+    g.font = '600 24px "Figtree", sans-serif'; g.fillStyle = "#fff"; g.fillText(fit(g, s + (n > 1 ? " ×" + n : ""), fw), x + 2, y + fh + 34);
+  }
+  const ses = new Set(cs.map(c => c.sessionId).filter(Boolean)).size;
+  const bait = countBy(cs, "bait")[0], meth = countBy(cs, "method")[0], ven = countBy(cs, c => venueName(c)).filter(([v]) => v !== "No venue")[0];
+  const l1 = [ses ? `${ses} session${ses === 1 ? "" : "s"}` : "", meth ? "Top method: " + meth[0] : "", bait ? "Top bait: " + bait[0] : ""].filter(Boolean).join("  ·  ");
+  g.font = '500 32px "Figtree", sans-serif';
+  if (l1) { g.fillStyle = "rgba(255,255,255,.85)"; g.fillText(fit(g, l1, CW - 2 * CX), CX, 1170); }
+  if (o.showVenue && ven) { g.fillStyle = "rgba(255,255,255,.72)"; g.fillText(fit(g, "Most fish at " + ven[0], CW - 2 * CX), CX, 1220); }
+  cardFooter(g); return cardBlob(cv);
 }
 
 /* ------------------------------------------------------------- sessions */
@@ -1595,7 +1850,7 @@ function venueDetailHtml(v) {
   const f = (k, val, full) => val ? `<div class="${full ? "full" : ""}"><dt>${k}</dt><dd>${val}</dd></div>` : "";
   return `<div class="big-title"><h3>${esc(v.name)}</h3><span class="num">${cs.length} fish</span></div>
     <dl class="facts" style="margin:0">
-      ${f("Sessions", String(ss.length))}${f("Club / ticket", esc(v.club))}
+      ${f("Sessions", String(ss.length))}${f("Water", WATER[v.water] || "")}${f("Club / ticket", esc(v.club))}
       ${f("Location", v.lat != null ? `<a href="${esc(mapsUrl(v.lat, v.lon))}" target="_blank" rel="noopener" style="color:inherit"><span class="num">${v.lat.toFixed(4)}, ${v.lon.toFixed(4)}</span></a>` : "Not set", true)}
       ${f("Notes", esc(v.notes), true)}
     </dl>
@@ -1614,6 +1869,7 @@ function openVenueForm(existing) {
   const v = existing ? { ...existing } : {};
   const body = `<fieldset><legend>Venue</legend>
       <div class="field"><label for="v-name">Name</label><input id="v-name" type="text" value="${esc(v.name || "")}" placeholder="Lake, pond, stretch of river"></div>
+      <div class="field"><label for="v-water">Type of water</label><select id="v-water"><option value="">Not set</option>${Object.entries(WATER).map(([k, l]) => `<option value="${k}" ${v.water === k ? "selected" : ""}>${l}</option>`).join("")}</select><span class="hint">Rivers have a close season for coarse fish from 15 March to 15 June. Waggler reminds you when it's near.</span></div>
       <div class="field"><label for="v-club">Club, ticket or day-ticket price</label><input id="v-club" type="text" value="${esc(v.club || "")}"></div>
       <div class="field"><label for="v-coords">Location</label><input id="v-coords" type="text" value="${v.lat != null ? v.lat.toFixed(5) + ", " + v.lon.toFixed(5) : ""}" placeholder="53.6818, -1.4986 or a Google Maps link"><button type="button" class="btn small" id="v-gps" style="margin-top:6px;align-self:flex-start">${I.pin} Use my location</button><span class="hint">Stand at the venue and tap Use my location, or paste numbers from Google Maps. Waggler uses this to match catches to the venue.</span></div>
       <div class="field"><label for="v-notes">Notes</label><textarea id="v-notes" placeholder="Depths, snags, best pegs, parking, rules">${esc(v.notes || "")}</textarea></div>
@@ -1634,7 +1890,7 @@ function openVenueForm(existing) {
       if (raw && !p) { toast("Couldn't find a location in that. Paste two numbers like 53.68, -1.49"); return; }
       const btn = $("#v-save", el); btn.disabled = true;
       try {
-        const doc = { name, club: $("#v-club", el).value.trim() || null, notes: $("#v-notes", el).value.trim() || null, lat: p ? p.lat : null, lon: p ? p.lon : null, createdAt: existing?.createdAt || new Date().toISOString(), updatedAt: new Date().toISOString() };
+        const doc = { name, water: $("#v-water", el).value || null, club: $("#v-club", el).value.trim() || null, notes: $("#v-notes", el).value.trim() || null, lat: p ? p.lat : null, lon: p ? p.lon : null, createdAt: existing?.createdAt || new Date().toISOString(), updatedAt: new Date().toISOString() };
         if (existing?.example) doc.example = true;
         const ref = existing ? col("venues").doc(existing.id) : col("venues").doc(uid());
         await write(() => ref.set(doc)); closeSheet(entry); toast("Venue saved");
@@ -1665,12 +1921,12 @@ function openSpecies(sp) {
   const entry = openSheet({ title: sp, body: speciesHtml(sp), refresh() { setBody(entry, speciesHtml(sp)); } });
 }
 function checklistHtml() {
-  const st = checklistState();
+  const st = checklistState(clScope), yr = clScope === "year";
   const row = sp => {
     const logged = st.logged[sp] !== undefined, ticked = !!st.ticked[sp], src = spPhoto(sp), id = "cl-" + sp.replace(/[^A-Za-z0-9]/g, "");
-    const note = logged ? `Logged${st.logged[sp] ? " · first " + esc(fmtShort(st.logged[sp])) + " " + esc(st.logged[sp].slice(0, 4)) : ""}` : ticked ? "Caught before Waggler" : "Not caught yet";
+    const note = logged ? `Logged${st.logged[sp] ? " · first " + esc(fmtShort(st.logged[sp])) + " " + esc(st.logged[sp].slice(0, 4)) : ""}` : ticked ? "Caught before Waggler" : yr ? "Not yet this year" : "Not caught yet";
     return `<label class="cl-row ${logged || ticked ? "on" : ""}" for="${id}">
-      <input type="checkbox" id="${id}" data-tick="${esc(sp)}" ${logged || ticked ? "checked" : ""} ${logged ? "disabled" : ""}>
+      <input type="checkbox" id="${id}" data-tick="${esc(sp)}" ${logged || ticked ? "checked" : ""} ${logged || yr ? "disabled" : ""}>
       ${src ? `<button type="button" class="idbtn" data-idsp="${esc(sp)}" aria-label="ID tips for ${esc(sp.toLowerCase())}"><img src="${esc(src)}" alt="" loading="lazy"></button>` : `<span class="cl-none">${I.fish}</span>`}
       <span class="cl-txt"><b>${esc(sp)}</b><span>${note}</span></span></label>`;
   };
@@ -1679,13 +1935,14 @@ function checklistHtml() {
     return `<section class="cl-group"><div class="section-h"><h2>${g}</h2><span class="num muted">${n} / ${list.length}</span></div><div class="cl-list">${list.map(row).join("")}</div></section>`;
   }).join("");
   const other = st.others.length ? `<section class="cl-group"><div class="section-h"><h2>Other species</h2><span class="num muted">${st.others.length}</span></div><div class="cl-list">${st.others.map(row).join("")}</div></section>` : "";
-  return `<div class="cl-head"><b class="num">${st.done.length}<span> / ${st.all.length}</span></b><span>species caught</span><div class="meter"><i style="width:${Math.round(st.done.length / st.all.length * 100)}%"></i></div></div>
-    <button class="btn small" data-share="species" style="align-self:flex-start">${I.image} Share my species count</button>
-    <p class="hint" style="margin:0">Species you log are ticked for you. Tick any others you've caught before you started using Waggler.</p>
+  return `<div class="chips" role="group" aria-label="Which list"><button class="chip" data-clscope="all" aria-pressed="${!yr}">All time</button><button class="chip" data-clscope="year" aria-pressed="${yr}">This year (${new Date().getFullYear()})</button></div>
+    <div class="cl-head"><b class="num">${st.done.length}<span> / ${st.all.length}</span></b><span>${yr ? "species caught this year" : "species caught"}</span><div class="meter"><i style="width:${Math.round(st.done.length / st.all.length * 100)}%"></i></div></div>
+    <button class="btn small" data-share="species" data-arg="${yr ? "year" : ""}" style="align-self:flex-start">${I.image} Share my species count</button>
+    <p class="hint" style="margin:0">${yr ? `Species you've logged since 1 January. The list starts again each new year.` : `Species you log are ticked for you. Tick any others you've caught before you started using Waggler.`}</p>
     <div class="chips" role="group" aria-label="Show"><button class="chip" data-clf="all" aria-pressed="${clFilter === "all"}">All</button><button class="chip" data-clf="todo" aria-pressed="${clFilter === "todo"}">Still to catch</button><button class="chip" data-clf="done" aria-pressed="${clFilter === "done"}">Caught</button></div>
     <div class="cl-body" data-show="${clFilter}">${groups}${other}</div>`;
 }
-let clFilter = "all";
+let clFilter = "all", clScope = "all";
 function openChecklist() {
   const entry = openSheet({ title: "Species checklist", body: checklistHtml(), onMount(el) {
     el.addEventListener("change", e => {
@@ -1694,7 +1951,7 @@ function openChecklist() {
       if (cb.checked) ticked[cb.dataset.tick] = true; else delete ticked[cb.dataset.tick];
       saveSettings({ ticked }); render();
     });
-    el.addEventListener("click", e => { const f = e.target.closest("[data-clf]"); if (f) { clFilter = f.dataset.clf; setBody(entry, checklistHtml()); } });
+    el.addEventListener("click", e => { const f = e.target.closest("[data-clf]"); if (f) { clFilter = f.dataset.clf; setBody(entry, checklistHtml()); } const sc = e.target.closest("[data-clscope]"); if (sc) { clScope = sc.dataset.clscope; setBody(entry, checklistHtml()); } });
   }, refresh() { const y = $(".sheet-body", entry.el).scrollTop; setBody(entry, checklistHtml()); $(".sheet-body", entry.el).scrollTop = y; } });
 }
 function openCredits() {
@@ -1776,6 +2033,9 @@ document.addEventListener("click", e => {
   const a = t.closest("[data-act]"); if (!a || a.closest(".sheet")) return;
   const act = a.dataset.act;
   if (act === "new-catch") openCatchForm(null);
+  else if (act === "quick-log") openCatchForm(null, { quick: true });
+  else if (act === "sling") openSling();
+  else if (act === "insights") openInsights();
   else if (act === "new-session") openSessionForm(null);
   else if (act === "new-venue") openVenueForm(null);
   else if (act === "licences") openLicences();
@@ -1799,7 +2059,7 @@ render();
   db.collection("catches").onSnapshot(async s => { S.catches = s.docs.map(d => ({ id: d.id, ...d.data() })); await loadPhotoUrls(S.catches.flatMap(c => c.photos || [])); S.loaded.catches = true; done(); });
   db.collection("sessions").onSnapshot(s => { S.sessions = s.docs.map(d => ({ id: d.id, ...d.data() })); S.loaded.sessions = true; done(); });
   db.collection("venues").onSnapshot(s => { S.venues = s.docs.map(d => ({ id: d.id, ...d.data() })); S.loaded.venues = true; done(); });
-  db.doc("settings/main").onSnapshot(d => { S.settings = d.exists ? { units: "lboz", licences: [], ...d.data() } : { units: "lboz", licences: [] }; render(); });
+  db.doc("settings/main").onSnapshot(d => { S.settings = d.exists ? { units: "lboz", licences: [], ...d.data() } : { units: "lboz", licences: [] }; S.settingsLoaded = true; render(); });
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 })();
 })();
