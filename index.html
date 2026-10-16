@@ -1014,7 +1014,7 @@ function viewMore() {
     <label class="toggle" style="margin-top:12px"><input type="checkbox" id="ask-backup" ${S.settings.askBackup === false ? "" : "checked"}> Ask to back up after each session</label>
     <p class="hint" style="margin:10px 0 0">Waggler ${"1.0.0"} · runs on your phone · ${WX_CREDIT}</p></div>`;
   h += `<div class="panel"><div class="section-h" style="margin-bottom:6px"><h3 style="margin:0">About</h3><button class="btn small ghost" data-act="credits">Credits</button></div>
-    <p class="hint" style="margin:0 0 10px">Waggler, a fishing log for UK anglers.</p>
+    <p class="hint" style="margin:0 0 10px">A fishing log made by a UK angler, for UK anglers. Built around British species, British records and our close seasons.</p>
     ${EARLY_ACCESS ? `<h4 class="sub-h">Early access</h4><p class="hint" style="margin:0 0 10px">${esc(EA_TEXT)}${S.settings.firstUsed ? ` You started using Waggler on ${esc(fmtDate(S.settings.firstUsed))}, so you're a founding angler.` : ""}</p>${founderRegHtml()}`
       : isFounder() ? `<h4 class="sub-h">Founding angler</h4><p class="hint" style="margin:0 0 10px">You started using Waggler on ${esc(fmtDate(S.settings.firstUsed))}, during early access. Everything that was free then stays free for you.</p>${founderRegHtml()}` : ""}
     <a class="btn small" href="${esc(feedbackHref())}">Send feedback</a>
@@ -2001,7 +2001,7 @@ function iosBanner() {
   return `<div class="banner"><p><b>On iPhone?</b> Tap the Share button in Safari, then <b>Add to Home Screen</b>. Waggler then opens like an app, works with no signal, and Safari keeps your catches safe.</p><button class="btn small" data-act="hide-ios">Got it</button></div>`;
 }
 function privacyText() {
-  return IS_APP ? "Your catches, photos and venues are stored on this phone only. Waggler doesn't send them to anyone. The only things that leave your phone are a catch's location, sent to Open-Meteo to look up the weather, and requests for the app's fonts. To see how many people use Waggler, visits are counted with Cloudflare Web Analytics, and the first time you open Waggler on a phone it's counted once as a new angler. Cloudflare says this doesn't use cookies or track you as a person. It never sees your catches, photos or venues."
+  return IS_APP ? "Your catches, photos and venues are stored on this phone only. Waggler doesn't send them to anyone. The only things that leave your phone are a catch's location, sent to Open-Meteo to look up the weather, and requests for the app's fonts. To see how many people use Waggler, visits are counted with Cloudflare Web Analytics, and the first time you open Waggler on a phone it's counted once as a new angler. Cloudflare says this doesn't use cookies or track you as a person. It never sees your catches, photos or venues. If you send feedback or register for founder updates, your email goes to Gary Durkin, who makes Waggler, and is only used to reply to you or send Waggler updates. Ask at any time and your email will be deleted."
     : "Your catches, photos and venues are saved to your Claude account and only you can see them.";
 }
 function founderHref() {
