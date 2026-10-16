@@ -378,7 +378,7 @@ const SPECIES_INFO = {
   "Wels catfish": { d: "A huge, scaleless predator stocked in some English lakes. It can grow far larger than any native fish.", f: ["Very wide, flat head", "Six barbels: two very long on the top jaw, four short under the chin", "Tiny dorsal fin", "Long anal fin running back to the tail", "No scales"] },
   "Brown trout": { d: "Our native trout, found in clean, cool rivers, streams and lakes.", f: ["Small fatty adipose fin behind the dorsal fin", "Black and red spots, often with pale rings", "Brown to golden sides", "Square or slightly forked tail"] },
   "Rainbow trout": { d: "A North American trout stocked in many UK fisheries.", f: ["Pink to purple stripe along the side", "Black spots covering the tail fin", "Adipose fin", "Silver to green back"] },
-  "Grayling": { d: "A fish of clean, fast rivers, nicknamed the lady of the stream.", f: ["Tall, sail-like dorsal fin", "Adipose fin", "Small mouth", "Teardrop-shaped pupil", "Silvery-grey with a scattering of dark spots"] },
+  "Grayling": { d: "A fish of clean, fast rivers, nicknamed the lady of the stream. Thought of as a game fish, but in law it counts as a coarse fish, so the river close season applies.", f: ["Tall, sail-like dorsal fin", "Adipose fin", "Small mouth", "Teardrop-shaped pupil", "Silvery-grey with a scattering of dark spots"] },
   "Sea trout": { d: "A brown trout that goes to sea to feed and comes back to rivers to spawn.", f: ["Bright silver when fresh from the sea", "Black spots, often X-shaped, mostly above the lateral line", "Upper jaw reaches past the back of the eye", "Thick tail root and square tail"] },
   "Salmon": { d: "The Atlantic salmon, a sea-going fish that returns to its home river to spawn.", f: ["Narrow wrist in front of the tail", "Slightly forked tail", "Few or no spots below the lateral line", "Upper jaw reaches only to the back of the eye"] },
   "Unknown": { d: "Use this when you can't be sure what you've caught. Hybrids are common in UK waters, and they mix features from both parents.", f: ["Roach x bream: deeper than a roach, with a longer anal fin than a roach but shorter than a bream", "Rudd x bream: bream-like body but with redder fins from the rudd parent", "Roach x rudd: hard to tell from either parent, with fin colour and mouth shape in between the two", "Carp x crucian: crucian shape but with small barbels. True crucians have none"] }
@@ -1094,7 +1094,7 @@ function openCatchForm(existing, opts = {}) {
     // river close season reminder
     const csCheck = () => {
       const w = $("#f-cs", el), v = venueById($("#f-venue", el).value), d = parseLocal(($("#f-when", el).value || nowLocal()).slice(0, 10)), sp = $("#f-species", el).value;
-      const show = v && v.water === "river" && d && inCloseSeason(d) && !SPECIES.Game.includes(sp);
+      const show = v && v.water === "river" && d && inCloseSeason(d) && sp && !LEGAL_GAME.includes(sp);
       w.hidden = !show; if (show) w.innerHTML = `This date is in the river close season, when coarse fishing on rivers isn't allowed in England and Wales (15 March to 15 June). <a href="${CS_LINK}" target="_blank" rel="noopener">GOV.UK rules</a>`;
     };
     el.addEventListener("change", e => { if (["f-venue", "f-when", "f-species"].includes(e.target.id)) csCheck(); });
@@ -1630,6 +1630,8 @@ function closeSeasonBanner() {
   if (n > 0 && n <= 14) return `<div class="banner"><p>The river close season for coarse fish starts on 15 March, in ${n} day${n === 1 ? "" : "s"}. <a href="${CS_LINK}" target="_blank" rel="noopener">GOV.UK rules</a></p></div>`;
   return "";
 }
+// In law (Salmon and Freshwater Fisheries Act 1975, s.41) only salmon and trout are excluded from "freshwater fish", so grayling counts as coarse for the close season
+const LEGAL_GAME = ["Brown trout", "Rainbow trout", "Sea trout", "Salmon"];
 const WATER = { river: "River or stream", still: "Lake or pond", canal: "Canal" };
 
 /* --------------------------------------------------------- this year's list */
