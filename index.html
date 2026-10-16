@@ -715,6 +715,55 @@ let installEvt = null;
 window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; const b = document.getElementById("install"); if (b) b.hidden = false; });
 window.addEventListener("appinstalled", () => { installEvt = null; const b = document.getElementById("install"); if (b) b.hidden = true; });
 
+/* ---------------------------------------------------------------- in-app browser warning
+   Links tapped in Facebook, Instagram and similar apps open in their own built-in browser.
+   That browser can't add Waggler to the home screen, and keeps its storage apart from Chrome or Safari,
+   so catches logged there can seem to vanish. Spot it and point people to their normal browser. */
+const IN_APP = (() => {
+  const ua = navigator.userAgent || "";
+  if (/FBAN|FBAV|FB_IAB|FBIOS|FB4A/i.test(ua)) return "Facebook";
+  if (/Instagram/i.test(ua)) return "Instagram";
+  if (/Messenger|MessengerForiOS/i.test(ua)) return "Messenger";
+  if (/musical_ly|BytedanceWebview|TikTok/i.test(ua)) return "TikTok";
+  if (/Snapchat/i.test(ua)) return "Snapchat";
+  if (/LinkedInApp/i.test(ua)) return "LinkedIn";
+  if (/Threads/i.test(ua)) return "Threads";
+  return null;
+})();
+function inAppWarning() {
+  if (!IN_APP || document.getElementById("iab")) return;
+  const ios = /iPhone|iPad|iPod/i.test(navigator.userAgent), url = location.origin + location.pathname;
+  const browser = ios ? "Safari" : "Chrome";
+  const css = `#iab{position:fixed;inset:0;z-index:9999;background:rgba(10,18,15,.72);display:flex;align-items:flex-end;justify-content:center;font-family:inherit}
+    #iab .box{background:var(--surface,#fff);color:var(--ink,#14201A);width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:24px 22px calc(22px + env(safe-area-inset-bottom));box-shadow:0 -10px 40px rgba(0,0,0,.3)}
+    #iab h2{margin:0 0 10px;font-size:22px;line-height:1.2}#iab p{margin:0 0 12px;line-height:1.45;font-size:16px}
+    #iab ol{margin:0 0 16px;padding-left:22px;line-height:1.5;font-size:16px}#iab .row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+    #iab button,#iab a.b{flex:1 1 auto;min-height:48px;border-radius:12px;border:1px solid var(--line,#CDD7CF);background:var(--surface,#fff);color:inherit;font:inherit;font-weight:600;font-size:16px;text-decoration:none;display:flex;align-items:center;justify-content:center;padding:0 16px}
+    #iab a.pri,#iab button.pri{background:var(--accent,#C2410C);border-color:var(--accent,#C2410C);color:var(--accent-ink,#fff)}
+    #iab .skip{background:none;border:0;min-height:40px;color:var(--muted,#55645C);font-weight:500;text-decoration:underline;width:100%}
+    #iab-bar{position:fixed;left:0;right:0;top:0;z-index:9998;background:#7A2E0A;color:#fff;font-size:14px;line-height:1.35;padding:calc(8px + env(safe-area-inset-top)) 14px 8px;display:flex;gap:10px;align-items:center}
+    #iab-bar button{flex:none;border:1px solid rgba(255,255,255,.6);background:none;color:#fff;border-radius:8px;font:inherit;font-weight:600;padding:6px 10px}`;
+  const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
+  const intent = `intent://${location.host}${location.pathname}#Intent;scheme=https;package=com.android.chrome;end`;
+  const wrap = document.createElement("div"); wrap.id = "iab"; wrap.setAttribute("role", "dialog"); wrap.setAttribute("aria-modal", "true"); wrap.setAttribute("aria-labelledby", "iab-h");
+  wrap.innerHTML = `<div class="box"><h2 id="iab-h">Open Waggler in ${browser}</h2>
+    <p>You're in ${IN_APP}'s built-in browser. Waggler can't be added to your home screen from here, and catches saved here won't show up when you open Waggler in ${browser}.</p>
+    <ol><li>Tap the <b>three dots</b> at the top right of this screen.</li><li>Choose <b>Open in ${ios ? "external browser" : "Chrome"}</b> (it may say <b>Open in browser</b>).</li></ol>
+    <div class="row">${ios ? "" : `<a class="b pri" href="${intent}">Open in Chrome</a>`}<button id="iab-copy" class="${ios ? "pri" : ""}">Copy link</button></div>
+    <button class="skip" id="iab-skip">Just looking, carry on here</button></div>`;
+  document.body.appendChild(wrap);
+  wrap.querySelector("#iab-copy").onclick = async e => { try { await navigator.clipboard.writeText(url); e.target.textContent = `Copied. Paste it into ${browser}`; } catch (er) { e.target.textContent = url.replace(/^https:\/\//, ""); } };
+  wrap.querySelector("#iab-skip").onclick = () => { wrap.remove(); showBar(); };
+  function showBar() {
+    if (document.getElementById("iab-bar")) return;
+    const bar = document.createElement("div"); bar.id = "iab-bar";
+    bar.innerHTML = `<span style="flex:1">You're in ${IN_APP}'s browser. Catches saved here won't carry over to ${browser}.</span><button>How to fix</button>`;
+    bar.querySelector("button").onclick = () => { bar.remove(); document.body.style.paddingTop = ""; document.body.appendChild(wrap); };
+    document.body.appendChild(bar); document.body.style.paddingTop = bar.offsetHeight + "px";
+  }
+}
+if (IN_APP) { if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", inAppWarning); else inAppWarning(); }
+
 /* ----------------------------------------------------------------- state */
 const S = {
   db: null, assets: null, downloads: null, sample: null, canIdentify: false, isOwner: null,
