@@ -1032,7 +1032,6 @@ function viewMore() {
       ${EARLY_ACCESS || isFounder() ? `<div class="crow"><div><b>Founder updates</b><span class="hint">Be the first to hear about new features. Sign up once and we'll email you now and then.</span></div><a class="btn small" href="${esc(founderHref())}">Sign up</a></div>` : ""}
       <div class="crow"><div><b>Feedback</b><span class="hint">Found a problem or have an idea? Email it straight to us.</span></div><a class="btn small" href="${esc(feedbackHref())}">Send feedback</a></div>
     </div>
-    <p class="hint" style="margin:6px 0 0">Both open an email to ${esc(FEEDBACK_EMAIL)}, so you can see and change what you send.</p>
     <h4 class="sub-h">Privacy</h4><p class="hint" style="margin:0">${esc(privacyText())}</p>
     <p class="hint" style="margin:12px 0 0">${esc(COPYRIGHT)}</p></div>`;
   return h;
