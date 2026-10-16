@@ -2172,11 +2172,12 @@ function openLicences() {
 
 /* ---------------------------------------------------------------- export */
 async function exportCsv() {
-  const cols = ["date","time","species","weight_lb","weight_oz","weight_kg","length_cm","venue","peg","method","bait","rig","sky","wind","wind_from","air_c","water_c","water_colour","level","pressure_mb","pressure_trend","returned","lat","lon","notes"];
+  const cols = ["date","time","session","species","maybe_species","weight_lb","weight_oz","weight_kg","length_cm","venue","peg","method","bait","rig","sky","wind","wind_from","air_c","water_c","water_colour","level","pressure_mb","pressure_trend","returned","lat","lon","photo","notes"];
   const q = v => { const s = String(v ?? ""); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
   const rows = [...S.catches].sort((a, b) => (a.when || "").localeCompare(b.when || "")).map(c => {
     const oz = c.weightOz || 0, cd = c.cond || {};
-    return [(c.when || "").slice(0, 10), fmtTime(c.when), c.species, oz ? Math.floor(oz / 16) : "", oz ? Math.round((oz % 16) * 10) / 10 : "", oz ? (oz * 0.028349523).toFixed(3) : "", c.lengthCm ?? "", venueName(c), c.peg, c.method, c.bait, c.rig, (SKY.find(s => s[0] === cd.sky) || [])[1], cd.wind, cd.windDir, cd.airC, cd.waterC, cd.clarity, cd.level, cd.pressure, cd.trend, c.released === false ? "no" : "yes", c.lat, c.lon, c.notes].map(q).join(",");
+    const ses = c.sessionId ? sessionById(c.sessionId) : null;
+    return [(c.when || "").slice(0, 10), fmtTime(c.when), ses ? `${ses.date} ${ses.start || ""}`.trim() : "", c.species, c.suspect || "", oz ? Math.floor(oz / 16) : "", oz ? Math.round((oz % 16) * 10) / 10 : "", oz ? (oz * 0.028349523).toFixed(3) : "", c.lengthCm ?? "", venueName(c), c.peg, c.method, c.bait, c.rig, (SKY.find(s => s[0] === cd.sky) || [])[1], cd.wind, cd.windDir, cd.airC, cd.waterC, cd.clarity, cd.level, cd.pressure, cd.trend, c.released === false ? "no" : "yes", c.lat, c.lon, c.photos && c.photos.length ? "y" : "n", c.notes].map(q).join(",");
   });
   try { const r = await S.downloads.save({ filename: `waggler-catches-${nowLocal().slice(0, 10)}.csv`, data: [cols.join(","), ...rows].join("\n") }); if (r.status === "saved") toast("Exported"); }
   catch (e) { if (e.code !== "declined") toast("Export isn't available here."); }
