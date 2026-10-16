@@ -49,7 +49,7 @@ button{cursor:pointer}
 .top-row{display:flex;align-items:center;gap:12px}
 .brand{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
 .brand h1{font:700 26px/1 var(--f-display);letter-spacing:-.02em;margin:0}
-.brand .sub{font-size:12px;color:var(--muted);letter-spacing:.02em}
+.brand .sub{margin:0;font-weight:400;font-size:12px;color:var(--muted);letter-spacing:.02em}
 .mark{width:34px;height:34px;flex:none}
 .brand h1{font-size:30px}
 .wl{display:inline-block;width:.36em;height:1.08em;vertical-align:-.22em;margin:0 -.01em 0 .01em}
@@ -72,7 +72,7 @@ a.btn{text-decoration:none;color:inherit}
 .tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:color-mix(in srgb,var(--surface) 94%,transparent);backdrop-filter:blur(10px);border-top:1px solid var(--line);
   padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
 .tabs-in{max-width:620px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);align-items:end}
-.tab{background:none;border:0;padding:8px 2px 10px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;font-weight:600;color:var(--muted);min-height:58px}
+.tab{min-width:0;background:none;border:0;padding:8px 2px 10px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;font-weight:600;color:var(--muted);min-height:58px}
 .tab svg{width:23px;height:23px}
 .tab[aria-current="page"]{color:var(--ink)}
 .tab[aria-current="page"] svg{color:var(--accent)}
@@ -84,7 +84,7 @@ a.btn{text-decoration:none;color:inherit}
 main{display:flex;flex-direction:column;gap:18px;padding-block:6px 20px}
 .section-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
 .section-h h2{font:700 19px/1.2 var(--f-display);margin:0;letter-spacing:-.01em}
-.eyebrow{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
 .muted{color:var(--muted)}
 .num{font-family:var(--f-data);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 
@@ -122,14 +122,14 @@ main{display:flex;flex-direction:column;gap:18px;padding-block:6px 20px}
 .card-title .num{font-size:15px;font-weight:600;flex:none}
 .meta{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .badges{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}
-.badge{font-size:11px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:6px;background:var(--sunk);color:var(--muted)}
+.badge{font-size:12px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:6px;background:var(--sunk);color:var(--muted)}
 .badge.pb{background:var(--accent);color:var(--accent-ink)}
 .badge.ex{background:var(--water-soft);color:var(--water)}
 
 .row-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;gap:14px;text-align:left;width:100%}
 .datebox{width:52px;flex:none;text-align:center;border-right:1px solid var(--line);padding-right:12px}
 .datebox b{display:block;font:700 24px/1 var(--f-display)}
-.datebox span{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.datebox span{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .row-main{min-width:0;flex:1}
 .row-main strong{display:block;font-weight:700;font-size:15.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row-side{text-align:right;flex:none}
@@ -147,7 +147,7 @@ main{display:flex;flex-direction:column;gap:18px;padding-block:6px 20px}
 .panel h3{font:700 16px var(--f-display);margin:0 0 10px}
 .table{width:100%;border-collapse:collapse;font-size:14px}
 .table td,.table th{padding:9px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
-.table th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.table th{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
 .table tr:last-child td{border-bottom:0}
 .table td.r,.table th.r{text-align:right;white-space:nowrap}
 .table tr[data-open]{cursor:pointer}
@@ -181,7 +181,7 @@ main{display:flex;flex-direction:column;gap:18px;padding-block:6px 20px}
 
 /* forms */
 fieldset{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
-legend{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);padding:0;margin-bottom:10px}
+legend{font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);padding:0;margin-bottom:10px}
 .field{display:flex;flex-direction:column;gap:5px;min-width:0}
 .field label,.lab{font-size:13px;font-weight:600}
 .hint{font-size:12.5px;color:var(--muted)}
@@ -224,7 +224,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;
 .big-title .num{font-size:24px;font-weight:600}
 .facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
 .facts div{padding:10px 12px;min-width:0;box-shadow:1px 0 0 var(--line),0 1px 0 var(--line)}
-.facts dt{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.facts dt{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .facts dd{margin:2px 0 0;font-weight:600;overflow-wrap:anywhere}
 .facts div.full{grid-column:1/-1}
 .actions{display:flex;gap:10px;flex-wrap:wrap}
@@ -242,7 +242,7 @@ fieldset{min-width:0}
 .mbadge .medal{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font:700 15px/1 var(--f-display);background:var(--sunk);color:var(--muted);border:2px dashed var(--line)}
 .mbadge.on .medal{background:var(--accent);color:var(--accent-ink);border:3px solid color-mix(in srgb,var(--accent) 55%,var(--surface))}
 .mbadge b{font-size:12.5px;line-height:1.2}
-.mbadge span:last-child{font-size:11px;color:var(--muted);line-height:1.2}
+.mbadge span:last-child{font-size:12px;color:var(--muted);line-height:1.2}
 .tarepick{display:flex;flex-direction:column;gap:6px}
 .tchip{cursor:pointer}.tchip input{width:18px;height:18px;margin:0;accent-color:var(--accent)}
 .tchip:has(input:checked){background:var(--ink);border-color:var(--ink);color:var(--bg)}
@@ -254,21 +254,31 @@ fieldset{min-width:0}
 .wnum{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:700;background:var(--sunk);color:var(--ink)}
 .wsteps li.done .wnum{background:var(--good);color:#fff}
 .wsteps li.done b{color:var(--muted)}
-.sub-h{margin:14px 0 4px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.h1row{display:flex;align-items:center;gap:10px}
+.sub-h{margin:14px 0 4px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.h1row{display:flex;align-items:center;gap:4px 10px;flex-wrap:wrap}
 .ea-tag{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--water-soft);color:var(--water);white-space:nowrap}
 .suspect{font-weight:500;color:var(--muted);font-size:.85em}
 .founder{display:flex;align-items:center;gap:14px;width:100%;margin:0 0 12px;padding:14px 16px;border-radius:16px;border:2px solid #C9A23F;background:#1D5852;color:#fff;text-align:left;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 4px 14px rgba(29,88,82,.25)}
 .fmedal{flex:none;width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#F6E3A1,#D9B046 55%,#9C7418);border:3px solid #5A4208;box-shadow:0 0 0 3px #E8C55A55}
 .fmedal svg{width:22px;height:46px}
 .ftxt{display:flex;flex-direction:column;gap:2px;min-width:0}
-.ftxt .fkick{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#E8C55A}
+.ftxt .fkick{font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#E8C55A}
 .ftxt b{font:700 17px/1.2 var(--f-display)}
 .ftxt span:last-child{font-size:12.5px;color:rgba(255,255,255,.8)}
 .share-months{margin-top:12px;display:flex;flex-direction:column;gap:6px}
 .cc-switch{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);cursor:pointer}
 .cc-switch input{width:24px;height:24px;flex:none;margin:2px 0 0;accent-color:var(--accent)}
 .cc-switch>span{display:flex;flex-direction:column;gap:2px}
+/* very large text or zoom: let things stack instead of squeezing */
+@media (max-width:300px){
+  .thumb{width:52px;height:52px}
+  .card-title{flex-wrap:wrap}.card-title strong{white-space:normal}
+  .card-body .meta,.card-body span{white-space:normal}
+  .season{grid-template-columns:1fr}
+  .banner.slim{flex-wrap:wrap}
+  .pbrow{flex-wrap:wrap}
+  .tab span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
 .cardprev{width:100%;max-width:100%;border-radius:var(--r);box-shadow:var(--shadow)}
 
 .spref{display:flex;gap:12px;align-items:center;padding:8px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
@@ -281,7 +291,7 @@ fieldset{min-width:0}
 .refhero .idbtn{width:100%}
 .idbox{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:6px}
 .idbox p{margin:0}
-.idbox h4{margin:4px 0 0;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.idbox h4{margin:4px 0 0;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .idbox ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px}
 .refhero figcaption{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
 .thumb img.ref{object-fit:contain;padding:4px}
@@ -322,7 +332,7 @@ fieldset{min-width:0}
 .wxrow .hint a{color:inherit}
 #f-gps{align-self:flex-start}
 .top-row #install{flex:none}
-.toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(12px + env(safe-area-inset-top,0px));z-index:40;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:600;font-size:14px;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(12px + env(safe-area-inset-top,0px));z-index:40;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:16px;font-weight:600;font-size:14px;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
@@ -335,7 +345,7 @@ fieldset{min-width:0}
   <header class="top wrap">
     <div class="top-row">
       <div class="brand">
-        <div><div class="h1row"><h1 aria-label="Waggler"><span aria-hidden="true">wagg<svg class="wl" viewBox="0 0 34 100" aria-hidden="true"><g transform="rotate(7 14 92)"><circle cx="14" cy="92" r="4" fill="none" stroke="var(--ink)" stroke-width="2.6"/><path d="M11.2 87.5 L16.8 87.5 L19 31 L9 31Z" fill="#C9A97A" stroke="var(--ink)" stroke-width="1.8" stroke-linejoin="round"/><rect x="9" y="4" width="10" height="26" rx="5" fill="var(--accent)" stroke="var(--ink)" stroke-width="1.6"/><rect x="9" y="26.5" width="10" height="5" fill="var(--ink)"/></g></svg>er</span></h1><span class="ea-tag">Early access</span></div><div class="sub" id="subtitle">Fishing log</div></div>
+        <div><div class="h1row"><h1 aria-label="Waggler"><span aria-hidden="true">wagg<svg class="wl" viewBox="0 0 34 100" aria-hidden="true"><g transform="rotate(7 14 92)"><circle cx="14" cy="92" r="4" fill="none" stroke="var(--ink)" stroke-width="2.6"/><path d="M11.2 87.5 L16.8 87.5 L19 31 L9 31Z" fill="#C9A97A" stroke="var(--ink)" stroke-width="1.8" stroke-linejoin="round"/><rect x="9" y="4" width="10" height="26" rx="5" fill="var(--accent)" stroke="var(--ink)" stroke-width="1.6"/><rect x="9" y="26.5" width="10" height="5" fill="var(--ink)"/></g></svg>er</span></h1><span class="ea-tag">Early access</span></div><h2 class="sub" id="subtitle">Fishing log</h2></div>
       </div>
       <button class="btn small" id="install" hidden>Install app</button>
     </div>
