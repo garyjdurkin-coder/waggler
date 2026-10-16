@@ -237,6 +237,9 @@ fieldset{min-width:0}
 .mbadge.on .medal{background:var(--accent);color:var(--accent-ink);border:3px solid color-mix(in srgb,var(--accent) 55%,var(--surface))}
 .mbadge b{font-size:12.5px;line-height:1.2}
 .mbadge span:last-child{font-size:11px;color:var(--muted);line-height:1.2}
+.tarepick{display:flex;flex-direction:column;gap:6px}
+.tchip{cursor:pointer}.tchip input{width:18px;height:18px;margin:0;accent-color:var(--accent)}
+.tchip:has(input:checked){background:var(--ink);border-color:var(--ink);color:var(--bg)}
 .share-months{margin-top:12px;display:flex;flex-direction:column;gap:6px}
 .cc-switch{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);cursor:pointer}
 .cc-switch input{width:24px;height:24px;flex:none;margin:2px 0 0;accent-color:var(--accent)}
@@ -901,7 +904,7 @@ function viewRecords() {
     `<div class="actions" style="margin-top:10px"><button class="btn small" data-act="licences">${I.edit} Edit</button></div></div>`;
   h += `<div class="panel"><h3>Settings</h3><div class="actions">
     <div class="chips" role="group" aria-label="Weight units"><button class="chip" data-units="lboz" aria-pressed="${S.settings.units !== "kg"}">lb & oz</button><button class="chip" data-units="kg" aria-pressed="${S.settings.units === "kg"}">kg</button></div>
-    <button class="btn small" data-act="sling">Weigh sling: ${S.settings.slingOz ? esc(fmtWeight(S.settings.slingOz)) : "not set"}</button>
+    <button class="btn small" data-act="sling">Sling and net weights: ${esc(tareLabel())}</button>
     <button class="btn small" data-act="export">${I.dl} Export catches (CSV)</button></div></div>`;
   h += `<div class="panel"><h3>Backup</h3><p class="hint" style="margin:0 0 10px">Your log is stored on this phone only. A backup file holds every catch and photo. Keep a copy in Google Drive or email it to yourself.${S.settings.lastBackup ? " Last backup: " + esc(fmtDate(S.settings.lastBackup)) + "." : ""}</p>
     <div class="actions"><button class="btn small primary" data-act="backup">${I.dl} Back up now</button><button class="btn small" data-act="restore">Restore from a backup</button><input type="file" id="restore-file" accept=".json,application/json" class="sr" tabindex="-1" aria-hidden="true"></div>
@@ -1026,7 +1029,12 @@ function openCatchForm(existing, opts = {}) {
       : `<div class="grid3 weight-big"><div class="field"><label for="f-lb">Pounds</label><div class="unit"><input id="f-lb" type="text" inputmode="numeric" value="${lb}"><span>lb</span></div></div>
         <div class="field"><label for="f-oz">Ounces</label><div class="unit"><input id="f-oz" type="text" inputmode="decimal" value="${oz}"><span>oz</span></div></div>
         <div class="field qhide"><label for="f-len">Length</label><div class="unit"><input id="f-len" type="text" inputmode="decimal" value="${c.lengthCm ?? ""}"><span>cm</span></div></div></div>`}
-      ${S.settings.slingOz ? `<label class="toggle"><input type="checkbox" id="f-sling" ${existing ? "" : "checked"}> Weighed in my sling (takes off ${esc(fmtWeight(S.settings.slingOz))})</label><span class="hint" id="f-net" style="margin-top:-6px"></span>` : ""}
+      ${(() => { const opts = TARES.filter(([, , key]) => S.settings[key]); if (!opts.length) return "";
+        const def = existing || S.settings.lastTare === "none" ? "" : (opts.find(([k]) => k === S.settings.lastTare) || opts[0])[0];
+        return `<div class="tarepick" role="radiogroup" aria-label="Weighed in"><span class="lab">Weighed in</span><div class="chips wrap">
+          ${opts.map(([k, label, key]) => `<label class="chip tchip"><input type="radio" name="f-tare" value="${k}" ${def === k ? "checked" : ""}> ${label} (−${esc(fmtWeight(S.settings[key]))})</label>`).join("")}
+          <label class="chip tchip"><input type="radio" name="f-tare" value="" ${def === "" ? "checked" : ""}> Nothing to take off</label></div>
+          <span class="hint" id="f-net"></span></div>`; })()}
       <label class="toggle"><input type="checkbox" id="f-released" ${c.released !== false ? "checked" : ""}> Returned to the water</label>
     </fieldset>
     <fieldset class="qhide"><legend>Where and when</legend>
@@ -1055,9 +1063,10 @@ function openCatchForm(existing, opts = {}) {
     $("#f-more", el)?.addEventListener("click", () => { $("#f-wrap", el).classList.remove("qmode"); $(".sheet-head h2", entry.el).textContent = "Log a catch"; });
     // weigh sling: show the fish's own weight as you type
     const grossOz = () => { if (kg) { const k = num($("#f-kg", el).value); return k ? k / 0.028349523 : null; } const l = num($("#f-lb", el).value) || 0, o = num($("#f-oz", el).value) || 0; return l || o ? l * 16 + o : null; };
-    const drawNet = () => { const n = $("#f-net", el); if (!n) return; const gw = grossOz(); n.textContent = $("#f-sling", el).checked && gw ? (gw > S.settings.slingOz ? "Fish weight: " + fmtWeight(Math.round((gw - S.settings.slingOz) * 10) / 10) : "That's no more than your sling weighs.") : ""; };
+    const tarePick = () => { const r = $('input[name="f-tare"]:checked', el); const t = r && r.value ? TARES.find(([k]) => k === r.value) : null; return t ? { what: t[0], label: t[1].toLowerCase(), oz: S.settings[t[2]] } : null; };
+    const drawNet = () => { const n = $("#f-net", el); if (!n) return; const gw = grossOz(), t = tarePick(); n.textContent = t && gw ? (gw > t.oz ? "Fish weight: " + fmtWeight(Math.round((gw - t.oz) * 10) / 10) : `That's no more than your ${t.label} weighs.`) : ""; };
     el.addEventListener("input", e => { if (e.target.closest(".weight-big")) drawNet(); });
-    $("#f-sling", el)?.addEventListener("change", drawNet);
+    el.addEventListener("change", e => { if (e.target.name === "f-tare") drawNet(); });
     // river close season reminder
     const csCheck = () => {
       const w = $("#f-cs", el), v = venueById($("#f-venue", el).value), d = parseLocal(($("#f-when", el).value || nowLocal()).slice(0, 10)), sp = $("#f-species", el).value;
@@ -1221,11 +1230,12 @@ function openCatchForm(existing, opts = {}) {
       if (kg) { const k = num($("#f-kg", el).value); if (k) weightOz = Math.round(k / 0.028349523 * 10) / 10; }
       else { const l = num($("#f-lb", el).value) || 0, o = num($("#f-oz", el).value) || 0; if (l || o) weightOz = Math.round((l * 16 + o) * 10) / 10; }
       if (!kg && num($("#f-oz", el).value) >= 16) { toast("Ounces go up to 15. Put whole pounds in the pounds box."); return; }
-      let tareOz = null;
-      if (weightOz && $("#f-sling", el)?.checked) {
-        if (weightOz <= S.settings.slingOz) { toast("That's no more than your sling weighs. Untick the sling box or check the weight."); return; }
-        tareOz = S.settings.slingOz; weightOz = Math.round((weightOz - tareOz) * 10) / 10;
+      let tareOz = null, tareWhat = null; const tp = tarePick();
+      if (weightOz && tp) {
+        if (weightOz <= tp.oz) { toast(`That's no more than your ${tp.label} weighs. Choose "Nothing to take off" or check the weight.`); return; }
+        tareOz = tp.oz; tareWhat = tp.what; weightOz = Math.round((weightOz - tareOz) * 10) / 10;
       }
+      if (!existing && $('input[name="f-tare"]', el)) { const lt = tp ? tp.what : "none"; if (lt !== S.settings.lastTare) saveSettings({ lastTare: lt }); }
       const when = $("#f-when", el).value || nowLocal();
       btn.disabled = true; btn.innerHTML = `<span class="spin"></span> Saving`;
       try {
@@ -1263,7 +1273,7 @@ function openCatchForm(existing, opts = {}) {
           await write(() => col("sessions").doc(s.id).update({ cond, updatedAt: new Date().toISOString() }));
         }
         const doc = {
-          species, weightOz, tareOz: tareOz ?? existing?.tareOz ?? null, lengthCm: num($("#f-len", el).value), released: $("#f-released", el).checked, when,
+          species, weightOz, tareOz: tareOz ?? existing?.tareOz ?? null, tareWhat: tareWhat ?? existing?.tareWhat ?? null, lengthCm: num($("#f-len", el).value), released: $("#f-released", el).checked, when,
           venueId, venueName: vName, sessionId: s.id, peg: peg || null,
           method: $("#f-method", el).value || null, bait: $("#f-bait", el).value.trim() || null, rig: $("#f-rig", el).value.trim() || null,
           cond, notes: $("#f-notes", el).value.trim() || null, photos: ids,
@@ -1559,26 +1569,29 @@ function openShareFor(kind, arg) {
 }
 
 /* ------------------------------------------------------------ weigh sling */
+const TARES = [["sling", "Sling", "slingOz"], ["net", "Landing net", "netOz"]];
 function openSling() {
-  const kg = S.settings.units === "kg", s = S.settings.slingOz || 0;
-  const lb = s ? Math.floor(s / 16) : "", oz = s ? Math.round((s - Math.floor(s / 16) * 16) * 10) / 10 : "";
-  const body = `<p class="hint" style="margin:0">Weigh your empty sling once (wet, as it would be after a fish) and enter it here. When you log a catch, Waggler takes it off for you.</p>
-    ${kg ? `<div class="field"><label for="sl-kg">Sling weight</label><div class="unit"><input id="sl-kg" type="text" inputmode="decimal" value="${s ? (s * 0.028349523).toFixed(2) : ""}"><span>kg</span></div></div>`
-      : `<div class="grid2"><div class="field"><label for="sl-lb">Pounds</label><div class="unit"><input id="sl-lb" type="text" inputmode="numeric" value="${lb}"><span>lb</span></div></div>
-         <div class="field"><label for="sl-oz">Ounces</label><div class="unit"><input id="sl-oz" type="text" inputmode="decimal" value="${oz}"><span>oz</span></div></div></div>`}`;
-  const foot = `${s ? `<button class="btn ghost" id="sl-clear">Clear</button>` : ""}<span class="grow"></span><button class="btn ghost" data-close>Cancel</button><button class="btn primary" id="sl-save">Save</button>`;
-  openSheet({ title: "Weigh sling", body, foot, onMount(el, entry) {
-    $("#sl-clear", el)?.addEventListener("click", async () => { await saveSettings({ slingOz: null }); closeSheet(entry); render(); toast("Sling weight cleared"); });
+  const kg = S.settings.units === "kg";
+  const block = ([k, label, key]) => { const v = S.settings[key] || 0; const lb = v ? Math.floor(v / 16) : "", oz = v ? Math.round((v - Math.floor(v / 16) * 16) * 10) / 10 : "";
+    return kg ? `<div class="field"><label for="t-${k}-kg">${label}</label><div class="unit"><input id="t-${k}-kg" type="text" inputmode="decimal" value="${v ? (v * 0.028349523).toFixed(2) : ""}"><span>kg</span></div></div>`
+      : `<div><span class="lab">${label}</span><div class="grid2"><div class="field"><label for="t-${k}-lb" class="sr">${label} pounds</label><div class="unit"><input id="t-${k}-lb" type="text" inputmode="numeric" value="${lb}"><span>lb</span></div></div>
+         <div class="field"><label for="t-${k}-oz" class="sr">${label} ounces</label><div class="unit"><input id="t-${k}-oz" type="text" inputmode="decimal" value="${oz}"><span>oz</span></div></div></div></div>`; };
+  const body = `<p class="hint" style="margin:0">Weigh whatever you weigh fish in, empty and wet, as it would be with a fish in it. When you log a catch you choose which one to take off, and Waggler does the sum. Leave a box empty if you don't use it.</p>${TARES.map(block).join("")}`;
+  const foot = `<span class="grow"></span><button class="btn ghost" data-close>Cancel</button><button class="btn primary" id="sl-save">Save</button>`;
+  openSheet({ title: "Sling and net weights", body, foot, onMount(el, entry) {
     $("#sl-save", el).addEventListener("click", async () => {
-      let v = 0;
-      if (kg) v = (num($("#sl-kg", el).value) || 0) / 0.028349523;
-      else { const o = num($("#sl-oz", el).value) || 0; if (o >= 16) { toast("Ounces go up to 15. Put whole pounds in the pounds box."); return; } v = (num($("#sl-lb", el).value) || 0) * 16 + o; }
-      v = Math.round(v * 10) / 10;
-      if (!(v > 0)) { toast("Enter the sling's weight"); return; }
-      await saveSettings({ slingOz: v }); closeSheet(entry); render(); toast("Sling weight saved: " + fmtWeight(v));
+      const patch = {};
+      for (const [k, label, key] of TARES) {
+        let v = 0;
+        if (kg) v = (num($(`#t-${k}-kg`, el).value) || 0) / 0.028349523;
+        else { const o = num($(`#t-${k}-oz`, el).value) || 0; if (o >= 16) { toast("Ounces go up to 15. Put whole pounds in the pounds box."); return; } v = (num($(`#t-${k}-lb`, el).value) || 0) * 16 + o; }
+        v = Math.round(v * 10) / 10; patch[key] = v > 0 ? v : null;
+      }
+      await saveSettings(patch); closeSheet(entry); render(); toast("Weights saved");
     });
   }});
 }
+function tareLabel() { const t = TARES.filter(([, , key]) => S.settings[key]).map(([, label, key]) => `${label.replace("Landing net", "net").toLowerCase()} ${fmtWeight(S.settings[key])}`); return t.length ? t.join(", ") : "not set"; }
 
 /* --------------------------------------------------------- close season */
 // Coarse fish close season on rivers in England and Wales: 15 March to 15 June (GOV.UK freshwater rod fishing rules)
