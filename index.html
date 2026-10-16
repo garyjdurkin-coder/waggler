@@ -156,6 +156,8 @@ main{display:flex;flex-direction:column;gap:18px;padding-block:6px 20px}
 .bar span{font-size:10.5px;color:var(--muted);font-family:var(--f-data)}
 .bar em{font-style:normal;font-size:10.5px;font-family:var(--f-data);color:var(--ink)}
 .hbar{display:grid;grid-template-columns:minmax(0,9rem) 1fr auto;align-items:center;gap:10px;font-size:14px;padding:5px 0}
+.vpick{display:grid;grid-template-columns:minmax(0,8.5rem) 1fr;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:14px}
+.vpick:first-of-type{border-top:0}.vpick .vk{color:var(--muted)}.vpick .vv .muted{display:block;font-size:13px}
 .hbar .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hbar .track{height:10px;border-radius:5px;background:var(--sunk);overflow:hidden}
 .hbar .track i{display:block;height:100%;background:var(--water);border-radius:5px}
@@ -397,7 +399,7 @@ function idHtml(sp) {
   const x = SPECIES_INFO[sp]; if (!x) return "";
   return `<div class="idbox"><p>${esc(x.d)}</p><h4>${sp === "Unknown" ? "Common hybrids" : "How to tell"}</h4><ul>${x.f.map(t => `<li>${esc(t)}</li>`).join("")}</ul></div>`;
 }
-const spPhoto = sp => PHOTOS[sp] ? "fish/" + PHOTOS[sp].file + "?v=1.7.0" : null;
+const spPhoto = sp => PHOTOS[sp] ? "fish/" + PHOTOS[sp].file + "?v=1.8.0" : null;
 function creditLine(sp) {
   return PHOTOS[sp] ? "Drawing made for Waggler" : "";
 }
@@ -938,7 +940,7 @@ function viewMore() {
     <button class="btn small" data-act="export">${I.dl} Export catches (CSV)</button></div></div>`;
   h += `<div class="panel"><h3>Backup</h3><p class="hint" style="margin:0 0 10px">Your log is stored on this phone only. A backup file holds every catch and photo. Keep a copy in Google Drive or email it to yourself.${S.settings.lastBackup ? " Last backup: " + esc(fmtDate(S.settings.lastBackup)) + "." : ""}</p>
     <div class="actions"><button class="btn small primary" data-act="backup">${I.dl} Back up now</button><button class="btn small" data-act="restore">Restore from a backup</button><input type="file" id="restore-file" accept=".json,application/json" class="sr" tabindex="-1" aria-hidden="true"></div>
-    <p class="hint" style="margin:10px 0 0">Waggler ${"1.7.0"} · runs on your phone · ${WX_CREDIT}</p></div>`;
+    <p class="hint" style="margin:10px 0 0">Waggler ${"1.8.0"} · runs on your phone · ${WX_CREDIT}</p></div>`;
   h += `<div class="panel"><div class="section-h" style="margin-bottom:6px"><h3 style="margin:0">About</h3><button class="btn small ghost" data-act="credits">Credits</button></div>
     <p class="hint" style="margin:0 0 10px">Waggler, a fishing log for UK anglers.</p>
     ${EARLY_ACCESS ? `<h4 class="sub-h">Early access</h4><p class="hint" style="margin:0 0 10px">${esc(EA_TEXT)}${S.settings.firstUsed ? ` You started using Waggler on ${esc(fmtDate(S.settings.firstUsed))}, so you're a founding angler.` : ""}</p>`
@@ -1749,13 +1751,34 @@ function insightsData(species) {
     const best = solid.length >= 2 ? solid.reduce((a, r) => r.avg > a.avg ? r : a) : null;
     out.push({ name, list, total, best });
   }
-  return { sessions: withCond.length, all: ss.length, factors: out };
+  // which venue has done best in each condition: needs 2 or more venues with 2 or more sessions each in that condition
+  const vname = id => (S.venues.find(v => v.id === id) || {}).name;
+  const picks = [];
+  for (const [name, get, order] of factors) {
+    for (const val of order) {
+      const by = {};
+      for (const s of ss) { if (get(s) !== val || !s.venueId || !vname(s.venueId)) continue; (by[s.venueId] ||= { id: s.venueId, n: 0, fish: 0 }); by[s.venueId].n++; by[s.venueId].fish += fishIn(s); }
+      const ok = Object.values(by).filter(r => r.n >= 2).map(r => ({ ...r, name: vname(r.id), avg: r.fish / r.n })).sort((a, b) => b.avg - a.avg);
+      if (ok.length < 2 || ok[0].avg < ok[1].avg * 1.25) continue;   // skip near ties: small gaps are likely chance
+      picks.push({ factor: name, val, best: ok[0], next: ok[1] });
+    }
+  }
+  const venuesUsed = new Set(ss.map(s => s.venueId).filter(vname)).size;
+  return { sessions: withCond.length, all: ss.length, factors: out, picks, venuesUsed };
 }
 function insightsHtml(species) {
   const d = insightsData(species);
   const opts = [...new Set(S.catches.filter(c => !c.example).map(c => c.species))].filter(sp => S.catches.filter(c => c.species === sp).length >= 5).sort();
   let h = `<p class="hint" style="margin:0">This compares the fish you caught per session in different conditions, using only your own sessions. It shows what has happened so far. It can't tell you why, and patterns firm up as you log more trips.</p>`;
   if (opts.length) h += `<div class="chips" role="group" aria-label="Species"><button class="chip" data-ins="" aria-pressed="${!species}">All fish</button>${opts.map(sp => `<button class="chip" data-ins="${esc(sp)}" aria-pressed="${species === sp}">${esc(sp)}</button>`).join("")}</div>`;
+  const unit = species ? esc(species.toLowerCase()) : "fish";
+  if (d.venuesUsed >= 2) {
+    const lab = { "Pressure": "Pressure", "Wind direction": "Wind from", "Wind strength": "Wind", "Sky": "Sky", "Air temperature": "Air", "Moon": "Moon" };
+    h += `<div class="panel"><h3>Which venue, when</h3>${d.picks.length
+      ? `<p class="hint" style="margin:0 0 8px">Where you've done clearly better in each condition so far. Each venue needs at least 2 sessions in that condition, and close results are left out.</p>
+         ${d.picks.map(p => `<div class="vpick"><span class="vk">${esc(lab[p.factor] || p.factor)}: ${esc(p.val)}</span><span class="vv"><b>${esc(p.best.name)}</b>, ${p.best.avg.toFixed(1)} ${unit} a session (${p.best.n} sessions)<span class="muted"> against ${p.next.avg.toFixed(1)} at ${esc(p.next.name)} (${p.next.n})</span></span></div>`).join("")}`
+      : `<p class="muted" style="margin:0">Once you've fished two venues at least twice each in the same conditions, this shows which has done better for you.</p>`}</div>`;
+  }
   if (!d.factors.length) return h + `<div class="empty"><h3>Not enough sessions yet</h3><p>Patterns show up once you've logged at least 5 sessions with the weather filled in. You have ${d.sessions} so far.</p></div>`;
   for (const f of d.factors) {
     const max = Math.max(0.1, ...f.list.map(r => r.avg));
