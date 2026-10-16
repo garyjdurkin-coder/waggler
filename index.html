@@ -88,6 +88,13 @@ main{display:flex;flex-direction:column;gap:18px;padding-block:6px 20px}
 .muted{color:var(--muted)}
 .num{font-family:var(--f-data);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 
+.contact{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.crow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;background:var(--surface)}
+.crow+.crow{border-top:1px solid var(--line)}
+.crow b{display:block;margin-bottom:2px}
+.crow .hint{display:block;margin:0}
+.crow .btn{flex:none}
+@media (max-width:300px){.crow{flex-wrap:wrap}}
 .freg{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin:0 0 12px}
 .freglink{display:inline-block;margin:-2px 0 12px;font-size:14px;font-weight:600;color:var(--water)}
 .madeuk{display:inline-flex;align-items:center;gap:8px;margin:0 0 8px;padding:5px 10px 5px 6px;border-radius:999px;background:var(--sunk);border:1px solid var(--line);font-size:13px;font-weight:600;color:var(--ink)}
@@ -1018,9 +1025,14 @@ function viewMore() {
     <p class="hint" style="margin:10px 0 0">Waggler ${"1.0.0"} · runs on your phone · ${WX_CREDIT}</p></div>`;
   h += `<div class="panel"><div class="section-h" style="margin-bottom:6px"><h3 style="margin:0">About</h3><button class="btn small ghost" data-act="credits">Credits</button></div>
     ${madeUk("a")}<p class="hint" style="margin:0 0 10px">A fishing log made by a UK angler, for UK anglers. Built around British species, British records and our close seasons.</p>
-    ${EARLY_ACCESS ? `<h4 class="sub-h">Early access</h4><p class="hint" style="margin:0 0 10px">${esc(EA_TEXT)}${S.settings.firstUsed ? ` You started using Waggler on ${esc(fmtDate(S.settings.firstUsed))}, so you're a founding angler.` : ""}</p>${founderRegHtml()}`
-      : isFounder() ? `<h4 class="sub-h">Founding angler</h4><p class="hint" style="margin:0 0 10px">You started using Waggler on ${esc(fmtDate(S.settings.firstUsed))}, during early access. Everything that was free then stays free for you.</p>${founderRegHtml()}` : ""}
-    <a class="btn small" href="${esc(feedbackHref())}">Send feedback</a>
+    ${EARLY_ACCESS ? `<h4 class="sub-h">Early access</h4><p class="hint" style="margin:0 0 10px">${esc(EA_TEXT)}${S.settings.firstUsed ? ` You started using Waggler on ${esc(fmtDate(S.settings.firstUsed))}, so you're a founding angler.` : ""}</p>`
+      : isFounder() ? `<h4 class="sub-h">Founding angler</h4><p class="hint" style="margin:0 0 10px">You started using Waggler on ${esc(fmtDate(S.settings.firstUsed))}, during early access. Everything that was free then stays free for you.</p>` : ""}
+    <h4 class="sub-h">Get in touch</h4>
+    <div class="contact">
+      ${EARLY_ACCESS || isFounder() ? `<div class="crow"><div><b>Founder updates</b><span class="hint">Be the first to hear about new features. Sign up once and we'll email you now and then.</span></div><a class="btn small" href="${esc(founderHref())}">Sign up</a></div>` : ""}
+      <div class="crow"><div><b>Feedback</b><span class="hint">Found a problem or have an idea? Email it straight to us.</span></div><a class="btn small" href="${esc(feedbackHref())}">Send feedback</a></div>
+    </div>
+    <p class="hint" style="margin:6px 0 0">Both open an email to ${esc(FEEDBACK_EMAIL)}, so you can see and change what you send.</p>
     <h4 class="sub-h">Privacy</h4><p class="hint" style="margin:0">${esc(privacyText())}</p>
     <p class="hint" style="margin:12px 0 0">${esc(COPYRIGHT)}</p></div>`;
   return h;
@@ -2004,7 +2016,7 @@ function iosBanner() {
   return `<div class="banner"><p><b>On iPhone?</b> Tap the Share button in Safari, then <b>Add to Home Screen</b>. Waggler then opens like an app, works with no signal, and Safari keeps your catches safe.</p><button class="btn small" data-act="hide-ios">Got it</button></div>`;
 }
 function privacyText() {
-  return IS_APP ? "Your catches, photos and venues are stored on this phone only. Waggler doesn't send them to anyone. The only things that leave your phone are a catch's location, sent to Open-Meteo to look up the weather, and requests for the app's fonts. To see how many people use Waggler, visits are counted with Cloudflare Web Analytics, and the first time you open Waggler on a phone it's counted once as a new angler. Cloudflare says this doesn't use cookies or track you as a person. It never sees your catches, photos or venues. If you send feedback or register for founder updates, your email goes to Gary Durkin, who makes Waggler, and is only used to reply to you or send Waggler updates. Ask at any time and your email will be deleted."
+  return IS_APP ? "Your catches, photos and venues are stored on this phone only. Waggler doesn't send them to anyone. The only things that leave your phone are a catch's location, sent to Open-Meteo to look up the weather, and requests for the app's fonts. To see how many people use Waggler, visits are counted with Cloudflare Web Analytics, and the first time you open Waggler on a phone it's counted once as a new angler. Cloudflare says this doesn't use cookies or track you as a person. It never sees your catches, photos or venues. If you send feedback or sign up for founder updates, your email goes to Gary Durkin, who makes Waggler, and is only used to reply to you or send Waggler updates. Ask at any time and your email will be deleted."
     : "Your catches, photos and venues are saved to your Claude account and only you can see them.";
 }
 // Union flag (standard 1:2 layout, official colours) and a small "made by a UK angler" tag
@@ -2014,14 +2026,14 @@ function unionFlag(k) {
 const madeUk = k => `<span class="madeuk">${unionFlag(k)}Made by a UK angler</span>`;
 function founderHref() {
   const body = `Please add me to the Waggler founder updates list.\n\nName (optional):\n\n${S.settings.firstUsed ? "First used Waggler on " + fmtDate(S.settings.firstUsed) + ".\n\n" : ""}My email address will only be used for Waggler founder updates. Reply STOP at any time to come off the list.`;
-  return `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent("Waggler founder updates")}&body=${encodeURIComponent(body)}`;
+  return `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent("[Waggler] Founder updates sign-up")}&body=${encodeURIComponent(body)}`;
 }
 function founderRegHtml() {
   return `<div class="freg"><a class="btn small primary" href="${esc(founderHref())}">Register for founder updates</a><span class="hint">Be the first to find out about new features. This opens an email to Waggler, so you choose what to send.</span></div>`;
 }
 function feedbackHref() {
   const body = "What were you doing?\n\nWhat happened?\n\nWhat did you expect?\n\nPhone and browser: " + navigator.userAgent;
-  return `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent("Waggler feedback")}&body=${encodeURIComponent(body)}`;
+  return `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent("[Waggler] Feedback")}&body=${encodeURIComponent(body)}`;
 }
 function welcomeHtml() {
   const steps = [
