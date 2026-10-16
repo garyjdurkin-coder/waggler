@@ -252,6 +252,13 @@ fieldset{min-width:0}
 .h1row{display:flex;align-items:center;gap:10px}
 .ea-tag{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--water-soft);color:var(--water);white-space:nowrap}
 .suspect{font-weight:500;color:var(--muted);font-size:.85em}
+.founder{display:flex;align-items:center;gap:14px;width:100%;margin:0 0 12px;padding:14px 16px;border-radius:16px;border:2px solid #C9A23F;background:#1D5852;color:#fff;text-align:left;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 4px 14px rgba(29,88,82,.25)}
+.fmedal{flex:none;width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#F6E3A1,#D9B046 55%,#9C7418);border:3px solid #5A4208;box-shadow:0 0 0 3px #E8C55A55}
+.fmedal svg{width:22px;height:46px}
+.ftxt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ftxt .fkick{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#E8C55A}
+.ftxt b{font:700 17px/1.2 var(--f-display)}
+.ftxt span:last-child{font-size:12.5px;color:rgba(255,255,255,.8)}
 .share-months{margin-top:12px;display:flex;flex-direction:column;gap:6px}
 .cc-switch{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);cursor:pointer}
 .cc-switch input{width:24px;height:24px;flex:none;margin:2px 0 0;accent-color:var(--accent)}
@@ -1654,6 +1661,7 @@ function milestones() {
   const cs = S.catches.filter(c => !c.example && c.when).sort((a, b) => a.when.localeCompare(b.when));
   const ticked = Object.keys(S.settings.ticked || {}).filter(sp => !NOT_LISTED.includes(sp));
   const out = [];
+  if (S.settings.firstUsed && (isFounder() || EARLY_ACCESS)) out.push({ id: "founder", glyph: "", title: "Founding angler", desc: "Joined Waggler during early access", have: isFounder() ? 1 : 0, need: 1, done: isFounder(), date: isFounder() ? S.settings.firstUsed : null, special: true });
   const add = (id, glyph, title, desc, have, need, date) => out.push({ id, glyph, title, desc, have: Math.min(have, need), need, done: have >= need, date: have >= need ? date : null });
   // species, including ones ticked from before Waggler
   { const seen = new Set(ticked); const hit = {}; for (const t of [5, 10, 15, 20, 25, 30]) if (seen.size >= t) hit[t] = "before";
@@ -1705,7 +1713,10 @@ function checkNewMilestones() {
 function milestonesPanel() {
   const ms = milestones(); const done = ms.filter(m => m.done);
   return `<div class="panel"><div class="section-h" style="margin-bottom:10px"><h3 style="margin:0">Milestones</h3><span class="num muted">${done.length} / ${ms.length}</span></div>
-    <div class="badgegrid">${ms.map(m => `<button class="mbadge ${m.done ? "on" : ""}" ${m.done ? `data-share="badge" data-arg="${esc(m.id)}"` : "disabled"} aria-label="${esc(m.title)}${m.done ? ", earned. Tap to share" : ", not yet"}">
+    ${ms.filter(m => m.special && m.done).map(m => `<button class="founder" data-share="badge" data-arg="founder" aria-label="Founding angler, earned. Tap to share">
+      <span class="fmedal"><svg viewBox="0 0 34 100" aria-hidden="true"><g transform="rotate(7 14 92)"><circle cx="14" cy="92" r="4" fill="none" stroke="#5A4208" stroke-width="2.6"/><path d="M11.2 87.5 L16.8 87.5 L19 31 L9 31Z" fill="#FBF3D5" stroke="#5A4208" stroke-width="1.8" stroke-linejoin="round"/><rect x="9" y="4" width="10" height="26" rx="5" fill="#C2410C" stroke="#5A4208" stroke-width="1.6"/><rect x="9" y="26.5" width="10" height="5" fill="#5A4208"/></g></svg></span>
+      <span class="ftxt"><span class="fkick">Founding angler</span><b>One of the first to fish with Waggler</b><span>Joined ${esc(badgeDate(m))} · early access</span></span></button>`).join("")}
+    <div class="badgegrid">${ms.filter(m => !m.special).map(m => `<button class="mbadge ${m.done ? "on" : ""}" ${m.done ? `data-share="badge" data-arg="${esc(m.id)}"` : "disabled"} aria-label="${esc(m.title)}${m.done ? ", earned. Tap to share" : ", not yet"}">
       <span class="medal">${esc(m.glyph)}</span><b>${esc(m.title)}</b><span>${m.done ? esc(badgeDate(m)) : m.progressText ? esc(m.progressText) : m.need > 1 ? `${m.have} / ${m.need}` : esc(m.desc)}</span></button>`).join("")}</div>
     ${done.length ? `<p class="hint" style="margin:10px 0 0">Tap a milestone you've earned to make a card for it.</p>` : ""}</div>`;
 }
@@ -1760,7 +1771,30 @@ function openInsights() {
 }
 
 /* -------------------------------------------------------- more share cards */
+async function drawFounderCard(m) {
+  const { cv, g } = await cardBase();
+  const cx = CW / 2, cy = 560, r = 250;
+  // laurel of small dots round a gold medal
+  for (let i = 0; i < 36; i++) { const a = Math.PI * 2 * i / 36; g.beginPath(); g.arc(cx + Math.cos(a) * (r + 46), cy + Math.sin(a) * (r + 46), 5, 0, Math.PI * 2); g.fillStyle = "rgba(232,197,90,.55)"; g.fill(); }
+  const gold = g.createLinearGradient(cx - r, cy - r, cx + r, cy + r); gold.addColorStop(0, "#F6E3A1"); gold.addColorStop(0.45, "#D9B046"); gold.addColorStop(1, "#9C7418");
+  g.beginPath(); g.arc(cx, cy, r + 18, 0, Math.PI * 2); g.fillStyle = "#5A4208"; g.fill();
+  g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fillStyle = gold; g.fill();
+  g.beginPath(); g.arc(cx, cy, r - 26, 0, Math.PI * 2); g.lineWidth = 5; g.strokeStyle = "rgba(90,66,8,.45)"; g.stroke();
+  // the float, leaning, as on the wordmark
+  g.save(); const k = 3.6; g.translate(cx - 14 * k + 8, cy - 50 * k); g.scale(k, k); g.translate(14, 92); g.rotate(7 * Math.PI / 180); g.translate(-14, -92); g.lineJoin = "round";
+  g.beginPath(); g.arc(14, 92, 4, 0, Math.PI * 2); g.lineWidth = 2.6; g.strokeStyle = "#5A4208"; g.stroke();
+  const body = new Path2D("M11.2 87.5 L16.8 87.5 L19 31 L9 31Z"); g.fillStyle = "#FBF3D5"; g.fill(body); g.lineWidth = 1.8; g.stroke(body);
+  roundRect(g, 9, 4, 10, 26, 5); g.fillStyle = "#C2410C"; g.fill(); g.lineWidth = 1.6; g.stroke(); g.fillStyle = "#5A4208"; g.fillRect(9, 26.5, 10, 5);
+  g.restore();
+  g.textAlign = "center";
+  g.font = '700 30px "Figtree", sans-serif'; g.fillStyle = "#E8C55A"; g.fillText("EARLY ACCESS", cx, 912);
+  bigText(g, "Founding angler", 104, 60, '700 SIZEpx "Bricolage Grotesque", system-ui, sans-serif', "#fff", cx, 1020, CW - 2 * CX);
+  g.font = '500 36px "Figtree", sans-serif'; g.fillStyle = "rgba(255,255,255,.85)"; g.fillText("One of the first to fish with Waggler", cx, 1086);
+  if (m.date) { g.fillStyle = "rgba(255,255,255,.65)"; g.fillText("Joined " + badgeDate(m), cx, 1140); }
+  g.textAlign = "left"; cardFooter(g); return cardBlob(cv);
+}
 async function drawBadgeCard(m) {
+  if (m.special) return drawFounderCard(m);
   const { cv, g } = await cardBase();
   const cx = CW / 2, cy = 560, r = 250;
   g.beginPath(); g.arc(cx, cy, r + 26, 0, Math.PI * 2); g.fillStyle = "rgba(255,255,255,.08)"; g.fill();
