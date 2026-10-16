@@ -90,6 +90,9 @@ main{display:flex;flex-direction:column;gap:18px;padding-block:6px 20px}
 
 .freg{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin:0 0 12px}
 .freglink{display:inline-block;margin:-2px 0 12px;font-size:14px;font-weight:600;color:var(--water)}
+.madeuk{display:inline-flex;align-items:center;gap:8px;margin:0 0 8px;padding:5px 10px 5px 6px;border-radius:999px;background:var(--sunk);border:1px solid var(--line);font-size:13px;font-weight:600;color:var(--ink)}
+.uflag{width:26px;height:13px;border-radius:2px;flex:none;box-shadow:0 0 0 1px rgba(0,0,0,.15)}
+.welcome .madeuk{align-self:flex-start}
 .pbl{display:flex;flex-direction:column}
 .pbrow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border:0;border-top:1px solid var(--line);background:none;color:inherit;font:inherit;text-align:left;width:100%;cursor:pointer}
 .pbrow:first-child{border-top:0}.pbn{min-width:0}.pbn b{display:block}.pbn span{display:block;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1014,7 +1017,7 @@ function viewMore() {
     <label class="toggle" style="margin-top:12px"><input type="checkbox" id="ask-backup" ${S.settings.askBackup === false ? "" : "checked"}> Ask to back up after each session</label>
     <p class="hint" style="margin:10px 0 0">Waggler ${"1.0.0"} · runs on your phone · ${WX_CREDIT}</p></div>`;
   h += `<div class="panel"><div class="section-h" style="margin-bottom:6px"><h3 style="margin:0">About</h3><button class="btn small ghost" data-act="credits">Credits</button></div>
-    <p class="hint" style="margin:0 0 10px">A fishing log made by a UK angler, for UK anglers. Built around British species, British records and our close seasons.</p>
+    ${madeUk("a")}<p class="hint" style="margin:0 0 10px">A fishing log made by a UK angler, for UK anglers. Built around British species, British records and our close seasons.</p>
     ${EARLY_ACCESS ? `<h4 class="sub-h">Early access</h4><p class="hint" style="margin:0 0 10px">${esc(EA_TEXT)}${S.settings.firstUsed ? ` You started using Waggler on ${esc(fmtDate(S.settings.firstUsed))}, so you're a founding angler.` : ""}</p>${founderRegHtml()}`
       : isFounder() ? `<h4 class="sub-h">Founding angler</h4><p class="hint" style="margin:0 0 10px">You started using Waggler on ${esc(fmtDate(S.settings.firstUsed))}, during early access. Everything that was free then stays free for you.</p>${founderRegHtml()}` : ""}
     <a class="btn small" href="${esc(feedbackHref())}">Send feedback</a>
@@ -2004,6 +2007,11 @@ function privacyText() {
   return IS_APP ? "Your catches, photos and venues are stored on this phone only. Waggler doesn't send them to anyone. The only things that leave your phone are a catch's location, sent to Open-Meteo to look up the weather, and requests for the app's fonts. To see how many people use Waggler, visits are counted with Cloudflare Web Analytics, and the first time you open Waggler on a phone it's counted once as a new angler. Cloudflare says this doesn't use cookies or track you as a person. It never sees your catches, photos or venues. If you send feedback or register for founder updates, your email goes to Gary Durkin, who makes Waggler, and is only used to reply to you or send Waggler updates. Ask at any time and your email will be deleted."
     : "Your catches, photos and venues are saved to your Claude account and only you can see them.";
 }
+// Union flag (standard 1:2 layout, official colours) and a small "made by a UK angler" tag
+function unionFlag(k) {
+  return `<svg class="uflag" viewBox="0 0 60 30" aria-hidden="true"><clipPath id="ufs${k}"><path d="M0,0v30h60V0z"/></clipPath><clipPath id="uft${k}"><path d="M30,15h30v15zv15H0zH0V0zV0h30z"/></clipPath><g clip-path="url(#ufs${k})"><path d="M0,0v30h60V0z" fill="#012169"/><path d="M0,0L60,30M60,0L0,30" stroke="#fff" stroke-width="6"/><path d="M0,0L60,30M60,0L0,30" clip-path="url(#uft${k})" stroke="#C8102E" stroke-width="4"/><path d="M30,0v30M0,15h60" stroke="#fff" stroke-width="10"/><path d="M30,0v30M0,15h60" stroke="#C8102E" stroke-width="6"/></g></svg>`;
+}
+const madeUk = k => `<span class="madeuk">${unionFlag(k)}Made by a UK angler</span>`;
 function founderHref() {
   const body = `Please add me to the Waggler founder updates list.\n\nName (optional):\n\n${S.settings.firstUsed ? "First used Waggler on " + fmtDate(S.settings.firstUsed) + ".\n\n" : ""}My email address will only be used for Waggler founder updates. Reply STOP at any time to come off the list.`;
   return `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent("Waggler founder updates")}&body=${encodeURIComponent(body)}`;
@@ -2021,7 +2029,7 @@ function welcomeHtml() {
     [!!(S.settings.slingOz || S.settings.netOz), "Set your sling or net weight", "Optional. Waggler takes it off every fish you weigh.", `<button class="btn small" data-act="sling">Set weights</button>`],
     [Object.keys(S.settings.ticked || {}).length > 0, "Tick species you've already caught", "Starts your species list from what you've caught before.", `<button class="btn small" data-act="checklist">Open species</button>`]
   ];
-  return `<div class="welcome panel"><h2>Welcome to Waggler</h2><p class="muted" style="margin:0">Three quick things, then log your first fish.</p>
+  return `<div class="welcome panel">${madeUk("w")}<h2>Welcome to Waggler</h2><p class="muted" style="margin:0">Three quick things, then log your first fish.</p>
     <ol class="wsteps">${steps.map(([done, t, d, btn], i) => `<li class="${done ? "done" : ""}"><span class="wnum">${done ? "✓" : i + 1}</span><div><b>${t}</b><span class="hint">${d}</span>${done ? "" : `<div style="margin-top:6px">${btn}</div>`}</div></li>`).join("")}</ol>
     <button class="btn primary" data-act="quick-log">${I.plus} Log your first catch</button>
     ${IS_APP && typeof makeBackup === "function" ? `<p class="hint" style="margin:0">New phone? <button class="linkbtn" data-act="go-restore">Restore from a backup</button></p>` : ""}
