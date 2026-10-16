@@ -344,7 +344,7 @@ fieldset{min-width:0}
 
 /* ------------------------------------------------------------------ data */
 const SPECIES = {
-  "Coarse": ["Roach","Rudd","Bream","Skimmer bream","Silver bream","Common carp","Mirror carp","Leather carp","Ghost carp","F1 carp","Crucian carp","Grass carp","Tench","Chub","Dace","Barbel","Ide","Golden orfe","Gudgeon","Bleak","Ruffe","Eel","Minnow"],
+  "Coarse": ["Roach","Rudd","Bream","Skimmer bream","Silver bream","Common carp","Mirror carp","Leather carp","Ghost carp","F1 carp","Crucian carp","Grass carp","Tench","Chub","Dace","Barbel","Ide","Golden orfe","Gudgeon","Bleak","Ruffe","Eel","Minnow","Sturgeon","Sterlet"],
   "Predator": ["Pike","Perch","Zander","Wels catfish"],
   "Game": ["Brown trout","Rainbow trout","Grayling","Sea trout","Salmon"],
   "Not sure": ["Unknown"]
@@ -389,6 +389,8 @@ const SPECIES_INFO = {
   "Grayling": { d: "A fish of clean, fast rivers, nicknamed the lady of the stream. Thought of as a game fish, but in law it counts as a coarse fish, so the river close season applies.", f: ["Tall, sail-like dorsal fin", "Adipose fin", "Small mouth", "Teardrop-shaped pupil", "Silvery-grey with a scattering of dark spots"] },
   "Sea trout": { d: "A brown trout that goes to sea to feed and comes back to rivers to spawn.", f: ["Bright silver when fresh from the sea", "Black spots, often X-shaped, mostly above the lateral line", "Upper jaw reaches past the back of the eye", "Thick tail root and square tail"] },
   "Salmon": { d: "The Atlantic salmon, a sea-going fish that returns to its home river to spawn.", f: ["Narrow wrist in front of the tail", "Slightly forked tail", "Few or no spots below the lateral line", "Upper jaw reaches only to the back of the eye"] },
+  "Sturgeon": { d: "Several kinds of sturgeon, mostly Siberian sturgeon and hybrids, are stocked in some commercial lakes. A wild sturgeon in a river is rare: photograph and measure it, check for a tag, return it alive and report it to Cefas or the Institute of Fisheries Management.", f: ["No scales, with rows of hard bony plates along the back and sides", "Shark-like tail with a longer top half", "Mouth underneath the head, with no teeth", "Four barbels hanging in front of the mouth"] },
+  "Sterlet": { d: "A small sturgeon from eastern Europe, sold for ponds and stocked in some commercial lakes.", f: ["Long, narrow, pointed snout", "Fringed barbels in front of the mouth", "Many small bony plates along the sides, more than other sturgeons", "Shark-like tail with a longer top half", "Pale yellowish belly"] },
   "Unknown": { d: "Use this when you can't be sure what you've caught. Hybrids are common in UK waters, and they mix features from both parents.", f: ["Roach x bream: deeper than a roach, with a longer anal fin than a roach but shorter than a bream", "Rudd x bream: bream-like body but with redder fins from the rudd parent", "Roach x rudd: hard to tell from either parent, with fin colour and mouth shape in between the two", "Carp x crucian: crucian shape but with small barbels. True crucians have none"] }
 };
 function idHtml(sp) {
@@ -1656,7 +1658,7 @@ function caughtMapYear(year = new Date().getFullYear()) {
 }
 
 /* ------------------------------------------------------------ milestones */
-const BADGE_SETS = [["predators", "Predator set", ["Pike", "Perch", "Zander"]], ["carp", "Carp set", ["Common carp", "Mirror carp", "Leather carp"]], ["bream", "Bream set", ["Bream", "Skimmer bream", "Silver bream"]]];
+const BADGE_SETS = [["natpred", "Native predators", ["Pike", "Perch"]], ["intpred", "Introduced predators", ["Zander", "Wels catfish"]], ["sturgeon", "Sturgeon set", ["Sturgeon", "Sterlet"]], ["carp", "Carp set", ["Common carp", "Mirror carp", "Leather carp"]], ["bream", "Bream set", ["Bream", "Skimmer bream", "Silver bream"]]];
 function milestones() {
   const cs = S.catches.filter(c => !c.example && c.when).sort((a, b) => a.when.localeCompare(b.when));
   const ticked = Object.keys(S.settings.ticked || {}).filter(sp => !NOT_LISTED.includes(sp));
