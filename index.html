@@ -222,6 +222,10 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;
 .facts dd{margin:2px 0 0;font-weight:600;overflow-wrap:anywhere}
 .facts div.full{grid-column:1/-1}
 .actions{display:flex;gap:10px;flex-wrap:wrap}
+.cc-prev{min-height:120px}
+.cc-switch{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);cursor:pointer}
+.cc-switch input{width:24px;height:24px;flex:none;margin:2px 0 0;accent-color:var(--accent)}
+.cc-switch>span{display:flex;flex-direction:column;gap:2px}
 .cardprev{width:100%;max-width:100%;border-radius:var(--r);box-shadow:var(--shadow)}
 
 .spref{display:flex;gap:12px;align-items:center;padding:8px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
@@ -351,7 +355,7 @@ function idHtml(sp) {
   const x = SPECIES_INFO[sp]; if (!x) return "";
   return `<div class="idbox"><p>${esc(x.d)}</p><h4>${sp === "Unknown" ? "Common hybrids" : "How to tell"}</h4><ul>${x.f.map(t => `<li>${esc(t)}</li>`).join("")}</ul></div>`;
 }
-const spPhoto = sp => PHOTOS[sp] ? "fish/" + PHOTOS[sp].file + "?v=1.2.4" : null;
+const spPhoto = sp => PHOTOS[sp] ? "fish/" + PHOTOS[sp].file + "?v=1.3.0" : null;
 function creditLine(sp) {
   return PHOTOS[sp] ? "Drawing made for Waggler" : "";
 }
@@ -590,6 +594,7 @@ const LocalDownloads = {
     return { status: "saved" };
   }
 };
+const APP_URL = location.origin + location.pathname;
 async function shareFile(filename, blob, text) {
   const file = new File([blob], filename, { type: blob.type || "image/jpeg" });
   if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text }); return true; }
@@ -835,7 +840,7 @@ function viewRecords() {
       <div class="meter" role="img" aria-label="${st.done.length} of ${st.all.length} species caught"><i style="width:${pct}%"></i></div>
       <span class="hint">${st.done.length ? "Tap to see what's left and tick off species you caught before using Waggler." : "Tick off every species you've ever caught."}</span></button>`; }
   const pbs = Object.values(pbMap()).sort((a, b) => b.weightOz - a.weightOz);
-  h += `<div class="panel"><h3>Personal bests</h3>`;
+  h += `<div class="panel"><div class="section-h" style="margin-bottom:10px"><h3 style="margin:0">Personal bests</h3>${pbs.length ? `<button class="btn small" data-share="pbs">${I.image} Share</button>` : ""}</div>`;
   if (!pbs.length) h += `<p class="muted" style="margin:0">Your heaviest fish of each species appear here once you log weights.</p>`;
   else h += `<div class="scrollx"><table class="table"><thead><tr><th>Species</th><th class="r">Weight</th><th>Venue</th><th class="r">Date</th></tr></thead><tbody>` +
     pbs.map(c => `<tr data-open-catch="${esc(c.id)}" data-open><td><b>${esc(c.species)}</b></td><td class="r num">${esc(fmtWeight(c.weightOz))}</td><td>${esc(venueName(c))}</td><td class="r">${esc(fmtShort(c.when))} ${(c.when || "").slice(2,4) ? "’" + (c.when || "").slice(2,4) : ""}</td></tr>`).join("") + `</tbody></table></div>`;
@@ -878,7 +883,7 @@ function viewRecords() {
     <button class="btn small" data-act="export">${I.dl} Export catches (CSV)</button></div></div>`;
   h += `<div class="panel"><h3>Backup</h3><p class="hint" style="margin:0 0 10px">Your log is stored on this phone only. A backup file holds every catch and photo. Keep a copy in Google Drive or email it to yourself.${S.settings.lastBackup ? " Last backup: " + esc(fmtDate(S.settings.lastBackup)) + "." : ""}</p>
     <div class="actions"><button class="btn small primary" data-act="backup">${I.dl} Back up now</button><button class="btn small" data-act="restore">Restore from a backup</button><input type="file" id="restore-file" accept=".json,application/json" class="sr" tabindex="-1" aria-hidden="true"></div>
-    <p class="hint" style="margin:10px 0 0">Waggler ${"1.2.4"} · runs on your phone · ${WX_CREDIT}</p></div>`;
+    <p class="hint" style="margin:10px 0 0">Waggler ${"1.3.0"} · runs on your phone · ${WX_CREDIT}</p></div>`;
   return h;
 }
 
@@ -1291,7 +1296,7 @@ function openCatch(id) {
 }
 
 /* ------------------------------------------------------------ catch card */
-async function drawCatchCard(c) {
+async function drawCatchCard(c, o = {}) {
   const W = 1080, H = 1350, cv = document.createElement("canvas"); cv.width = W; cv.height = H; const g = cv.getContext("2d");
   try { await Promise.all([document.fonts.load('700 120px "Bricolage Grotesque"'), document.fonts.load('600 60px "JetBrains Mono"'), document.fonts.load('500 40px "Figtree"')]); } catch (e) {}
   let img = null;
@@ -1301,7 +1306,8 @@ async function drawCatchCard(c) {
     g.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
   } else {
     const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, "#1D5852"); gr.addColorStop(1, "#0E1412"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
-    g.save(); g.translate(W / 2 - 300, 470); g.scale(9, 9); g.fillStyle = "rgba(255,255,255,.14)"; g.fill(new Path2D("M4 18c8-12 26-15 40-6l12-8-3 14 3 14-12-8C30 33 12 30 4 18z")); g.restore();
+    if (spPhoto(c.species)) await cardFish(g, c.species, CX, 186, W - 2 * CX, 410, { r: 28, pad: 60 });
+    else { g.save(); g.translate(W / 2 - 300, 470); g.scale(9, 9); g.fillStyle = "rgba(255,255,255,.14)"; g.fill(new Path2D("M4 18c8-12 26-15 40-6l12-8-3 14 3 14-12-8C30 33 12 30 4 18z")); g.restore(); }
   }
   const sh = g.createLinearGradient(0, H * 0.45, 0, H); sh.addColorStop(0, "rgba(8,14,12,0)"); sh.addColorStop(0.55, "rgba(8,14,12,.72)"); sh.addColorStop(1, "rgba(8,14,12,.92)");
   g.fillStyle = sh; g.fillRect(0, H * 0.45, W, H * 0.55);
@@ -1316,7 +1322,7 @@ async function drawCatchCard(c) {
   let y = H - 78;
   g.fillStyle = "rgba(255,255,255,.78)"; g.font = '500 34px "Figtree", system-ui, sans-serif';
   const line3 = [c.method, c.bait].filter(Boolean).join(" · ");
-  const line2 = [venueName(c) !== "No venue" ? venueName(c) : "", c.peg ? "Peg " + c.peg : "", fmtDate(c.when)].filter(Boolean).join("  ·  ");
+  const line2 = [o.showVenue && venueName(c) !== "No venue" ? venueName(c) : "", o.showVenue && c.peg ? "Peg " + c.peg : "", fmtDate(c.when)].filter(Boolean).join("  ·  ");
   if (line3) { g.fillText(fit(g, line3, W - 2 * X), X, y); y -= 52; }
   g.fillStyle = "rgba(255,255,255,.92)"; g.fillText(fit(g, line2, W - 2 * X), X, y); y -= 70;
   const wt = fmtWeight(c.weightOz);
@@ -1329,26 +1335,170 @@ async function drawCatchCard(c) {
 function roundRect(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
 function fit(g, s, w) { if (g.measureText(s).width <= w) return s; while (s.length > 4 && g.measureText(s + "…").width > w) s = s.slice(0, -1); return s + "…"; }
 function openCatchCard(c) {
-  const entry = openSheet({ title: "Catch card", body: `<div class="empty"><span class="spin"></span><p>Making your card…</p></div>`,
-    foot: `<span class="grow"></span><button class="btn ghost" data-close>Close</button><button class="btn" id="cc-save" disabled>${I.dl} Save</button><button class="btn primary" id="cc-share" disabled>Share</button>` });
-  let blob = null;
-  drawCatchCard(c).then(b => {
-    blob = b;
-    setBody(entry, `<img class="cardprev" src="${URL.createObjectURL(b)}" alt="Catch card for ${esc(c.species)}"><p class="hint" style="margin:0">Share sends it straight to WhatsApp, Facebook or a text. Save puts it in your Downloads.</p>`);
-    $("#cc-save", entry.el).disabled = false; $("#cc-share", entry.el).disabled = false;
-  }).catch(() => setBody(entry, `<div class="empty"><h3>Couldn't make the card</h3><p>The photo didn't load. Check your signal and try again.</p></div>`));
-  $("#cc-share", entry.el).addEventListener("click", async () => {
-    if (!blob) return;
-    const name = `${c.species.replace(/[^A-Za-z0-9]+/g, "-")}-${(c.when || "").slice(0, 10)}.jpg`.toLowerCase();
-    try { if (!(await shareFile(name, blob, `${c.species}${c.weightOz ? ", " + fmtWeight(c.weightOz) : ""}`))) { await S.downloads.save({ filename: name, data: blob }); toast("Sharing isn't available, so the image was saved instead"); } }
-    catch (e) { if (e && e.name !== "AbortError") toast("Couldn't share the image."); }
+  openShareCard({ title: "Catch card", file: `${c.species.replace(/[^A-Za-z0-9]+/g, "-")}-${(c.when || "").slice(0, 10)}.jpg`.toLowerCase(),
+    text: `${c.species}${c.weightOz ? ", " + fmtWeight(c.weightOz) : ""}`, draw: o => drawCatchCard(c, o), venueOption: true });
+}
+/* ------------------------------------------------------------ share cards */
+const CW = 1080, CH = 1350, CX = 72;
+const appLink = () => (typeof APP_URL === "string" ? APP_URL : "");
+const spImgCache = {};
+function speciesImg(sp) {
+  const src = spPhoto(sp); if (!src) return Promise.resolve(null);
+  if (!spImgCache[sp]) spImgCache[sp] = new Promise(ok => { const im = new Image(); im.onload = () => ok(im); im.onerror = () => ok(null); im.src = src; });
+  return spImgCache[sp];
+}
+async function cardFonts() { try { await Promise.all([document.fonts.load('700 120px "Bricolage Grotesque"'), document.fonts.load('600 60px "JetBrains Mono"'), document.fonts.load('500 40px "Figtree"'), document.fonts.load('600 40px "Figtree"')]); } catch (e) {} }
+function cardBrand(g) {
+  const X = CX;
+  g.fillStyle = "#FF6B35"; g.fillRect(X, 64, 10, 40); g.fillStyle = "#fff"; g.beginPath(); g.moveTo(X - 2, 150); g.lineTo(X + 1, 104); g.lineTo(X + 9, 104); g.lineTo(X + 12, 150); g.closePath(); g.fill();
+  g.font = '600 34px "Figtree", system-ui, sans-serif'; g.fillStyle = "rgba(255,255,255,.92)"; g.textBaseline = "alphabetic"; g.fillText("Waggler", X + 34, 118);
+}
+async function cardBase() {
+  await cardFonts();
+  const cv = document.createElement("canvas"); cv.width = CW; cv.height = CH; const g = cv.getContext("2d");
+  const gr = g.createLinearGradient(0, 0, 0, CH); gr.addColorStop(0, "#1D5852"); gr.addColorStop(1, "#0E1412"); g.fillStyle = gr; g.fillRect(0, 0, CW, CH);
+  cardBrand(g);
+  return { cv, g };
+}
+function cardFooter(g) {
+  g.font = '500 28px "Figtree", system-ui, sans-serif'; g.fillStyle = "rgba(255,255,255,.62)"; g.textBaseline = "alphabetic";
+  const link = appLink().replace(/^https?:\/\//, "").replace(/\/$/, "");
+  g.fillText(fit(g, link ? "Logged with Waggler · " + link : "Logged with Waggler", CW - 2 * CX), CX, CH - 52);
+}
+function cardBlob(cv) { return new Promise((ok, no) => { try { cv.toBlob(b => b ? ok(b) : no(new Error("encode")), "image/jpeg", 0.92); } catch (e) { no(e); } }); }
+async function cardFish(g, sp, x, y, w, h, opts = {}) {
+  g.save(); g.fillStyle = opts.faded ? "rgba(255,255,255,.07)" : "#D3E5E0"; roundRect(g, x, y, w, h, opts.r || 18); g.fill(); g.restore();
+  const im = await speciesImg(sp); if (!im) return;
+  const pad = opts.pad ?? Math.round(w * 0.04), iw = w - 2 * pad, ih = iw * 180 / 320;
+  g.save(); if (opts.faded) { g.globalAlpha = 0.28; try { g.filter = "grayscale(1)"; } catch (e) {} }
+  g.drawImage(im, x + pad, y + (h - ih) / 2, iw, ih); g.restore();
+}
+function cardPill(g, t) { g.font = '700 30px "Figtree", sans-serif'; const tw = g.measureText(t).width + 44; g.fillStyle = "#FF6B35"; roundRect(g, CW - CX - tw, 74, tw, 56, 28); g.fill(); g.fillStyle = "#1A0D07"; g.fillText(t, CW - CX - tw + 22, 113); }
+function bigText(g, s, size, min, font, colour, x, y, maxW) {
+  let fs = size; g.font = `${font.replace("SIZE", fs)}`;
+  while (g.measureText(s).width > maxW && fs > min) { fs -= 4; g.font = font.replace("SIZE", fs); }
+  g.fillStyle = colour; g.fillText(fit(g, s, maxW), x, y);
+}
+
+async function drawSpeciesCard() {
+  const { cv, g } = await cardBase(); const st = checklistState();
+  const n = st.done.length, total = st.all.length;
+  g.font = '700 190px "Bricolage Grotesque", system-ui, sans-serif'; g.fillStyle = "#fff"; g.fillText(String(n), CX - 6, 330);
+  const nw = g.measureText(String(n)).width;
+  g.font = '600 76px "Figtree", sans-serif'; g.fillStyle = "rgba(255,255,255,.7)"; g.fillText("/ " + total, CX + nw + 18, 330);
+  g.font = '500 40px "Figtree", sans-serif'; g.fillStyle = "rgba(255,255,255,.9)"; g.fillText("species caught", CX, 392);
+  g.fillStyle = "rgba(255,255,255,.14)"; roundRect(g, CX, 422, CW - 2 * CX, 18, 9); g.fill();
+  g.fillStyle = "#FF6B35"; roundRect(g, CX, 422, Math.max(18, (CW - 2 * CX) * n / total), 18, 9); g.fill();
+  const cols = 6, gap = 12, cw = (CW - 2 * CX - gap * (cols - 1)) / cols, ch = Math.round(cw * 0.6), rowH = ch + 34;
+  let i = 0;
+  for (const sp of CHECK_SPECIES) {
+    const x = CX + (i % cols) * (cw + gap), y = 478 + Math.floor(i / cols) * (rowH + 8);
+    const got = st.done.includes(sp);
+    await cardFish(g, sp, x, y, cw, ch, { faded: !got, r: 12, pad: 6 });
+    g.font = '600 19px "Figtree", sans-serif'; g.fillStyle = got ? "rgba(255,255,255,.92)" : "rgba(255,255,255,.4)"; g.fillText(fit(g, sp, cw), x + 2, y + ch + 25);
+    i++;
+  }
+  cardFooter(g); return cardBlob(cv);
+}
+
+async function drawPbCard(c, o) {
+  const { cv, g } = await cardBase(); cardPill(g, "PERSONAL BEST");
+  await cardFish(g, c.species, CX, 186, CW - 2 * CX, 580, { r: 28, pad: 24 });
+  bigText(g, c.species, 120, 70, '700 SIZEpx "Bricolage Grotesque", system-ui, sans-serif', "#fff", CX - 4, 920, CW - 2 * CX);
+  const wt = fmtWeight(c.weightOz);
+  if (wt) { g.font = '600 96px "JetBrains Mono", ui-monospace, monospace'; g.fillStyle = "#FF6B35"; g.fillText(wt, CX, 1038); }
+  g.font = '500 36px "Figtree", system-ui, sans-serif';
+  const l1 = [o.showVenue && venueName(c) !== "No venue" ? venueName(c) : "", o.showVenue && c.peg ? "Peg " + c.peg : "", fmtDate(c.when)].filter(Boolean).join("  ·  ");
+  g.fillStyle = "rgba(255,255,255,.92)"; g.fillText(fit(g, l1, CW - 2 * CX), CX, 1120);
+  const l2 = [c.method, c.bait].filter(Boolean).join(" · ");
+  if (l2) { g.fillStyle = "rgba(255,255,255,.75)"; g.fillText(fit(g, l2, CW - 2 * CX), CX, 1172); }
+  cardFooter(g); return cardBlob(cv);
+}
+
+async function drawPbsCard() {
+  const { cv, g } = await cardBase();
+  const pbs = Object.values(pbMap()).filter(c => c.weightOz > 0).sort((a, b) => b.weightOz - a.weightOz);
+  g.font = '700 96px "Bricolage Grotesque", system-ui, sans-serif'; g.fillStyle = "#fff"; g.fillText("Personal bests", CX - 4, 270);
+  const show = pbs.slice(0, 8);
+  let y = 318;
+  for (const c of show) {
+    await cardFish(g, c.species, CX, y, 168, 96, { r: 14, pad: 8 });
+    g.font = '600 44px "Figtree", sans-serif'; g.fillStyle = "#fff"; g.fillText(fit(g, c.species, 470), CX + 196, y + 50);
+    g.font = '500 26px "Figtree", sans-serif'; g.fillStyle = "rgba(255,255,255,.6)"; g.fillText(fmtDate(c.when), CX + 196, y + 86);
+    g.font = '600 50px "JetBrains Mono", ui-monospace, monospace'; g.fillStyle = "#FF6B35"; const wt = fmtWeight(c.weightOz); g.fillText(wt, CW - CX - g.measureText(wt).width, y + 64);
+    y += 116;
+  }
+  if (pbs.length > show.length) { g.font = '500 30px "Figtree", sans-serif'; g.fillStyle = "rgba(255,255,255,.7)"; g.fillText(`+ ${pbs.length - show.length} more`, CX, y + 30); }
+  cardFooter(g); return cardBlob(cv);
+}
+
+async function drawSessionCard(s, o) {
+  const { cv, g } = await cardBase(); const st = sessionStats(s);
+  bigText(g, fmtDate(s.date), 84, 50, '700 SIZEpx "Bricolage Grotesque", system-ui, sans-serif', "#fff", CX - 4, 262, CW - 2 * CX);
+  const sub = [o.showVenue && venueName(s) !== "No venue" ? venueName(s) : "", o.showVenue && s.peg ? "Peg " + s.peg : "", s.start && s.end ? s.start + " to " + s.end : ""].filter(Boolean).join("  ·  ");
+  if (sub) { g.font = '500 36px "Figtree", sans-serif'; g.fillStyle = "rgba(255,255,255,.88)"; g.fillText(fit(g, sub, CW - 2 * CX), CX, 318); }
+  const best = st.cs.length ? st.cs.reduce((a, c) => (c.weightOz || 0) > (a.weightOz || 0) ? c : a) : null;
+  const tiles = [[String(st.n), st.n === 1 ? "Fish" : "Fish"], [fmtWeight(st.total) || "–", "Total weight"], [best && best.weightOz ? fmtWeight(best.weightOz) : "–", best && best.weightOz ? "Best: " + best.species : "Best fish"]];
+  const tw = (CW - 2 * CX - 2 * 20) / 3;
+  tiles.forEach(([v, l], k) => {
+    const x = CX + k * (tw + 20);
+    g.fillStyle = "rgba(255,255,255,.09)"; roundRect(g, x, 360, tw, 170, 24); g.fill();
+    bigText(g, v, 60, 26, '600 SIZEpx "JetBrains Mono", ui-monospace, monospace', k === 0 ? "#fff" : "#FF6B35", x + 22, 452, tw - 40);
+    g.font = '500 26px "Figtree", sans-serif'; g.fillStyle = "rgba(255,255,255,.7)"; g.fillText(fit(g, l, tw - 40), x + 22, 500);
   });
-  $("#cc-save", entry.el)?.addEventListener("click", async () => {
-    if (!blob) return;
-    const name = `${c.species.replace(/[^A-Za-z0-9]+/g, "-")}-${(c.when || "").slice(0, 10)}.jpg`.toLowerCase();
-    try { const r = await S.downloads.save({ filename: name, data: blob }); if (r.status === "saved") toast("Image saved"); }
-    catch (e) { if (e.code !== "declined") toast(e.code === "rate_limited" ? "One moment, a save is already open." : "Saving isn't available here. Press and hold the image instead."); }
+  const bySp = countBy(st.cs, "species").slice(0, 6);
+  const fw = tw, fh = Math.round(fw * 0.56);
+  for (let k = 0; k < bySp.length; k++) {
+    const [sp, nn] = bySp[k]; const x = CX + (k % 3) * (fw + 20), y = 576 + Math.floor(k / 3) * (fh + 64);
+    await cardFish(g, sp, x, y, fw, fh, { r: 18, pad: 10 });
+    g.font = '600 30px "Figtree", sans-serif'; g.fillStyle = "#fff"; g.fillText(fit(g, sp + (nn > 1 ? " ×" + nn : ""), fw), x + 2, y + fh + 40);
+  }
+  const cond = s.cond || {}; const sky = SKY.find(x => x[0] === cond.sky);
+  const lc = [sky ? sky[1] : "", cond.airC != null ? cond.airC + "°C" : "", cond.wind ? cond.wind + " wind" : ""].filter(Boolean).join(" · ");
+  const lm = [s.method, s.bait].filter(Boolean).join(" · ");
+  g.font = '500 34px "Figtree", sans-serif';
+  if (lc) { g.fillStyle = "rgba(255,255,255,.85)"; g.fillText(fit(g, lc, CW - 2 * CX), CX, 1150); }
+  if (lm) { g.fillStyle = "rgba(255,255,255,.72)"; g.fillText(fit(g, lm, CW - 2 * CX), CX, 1204); }
+  cardFooter(g); return cardBlob(cv);
+}
+
+function openShareCard({ title, file, text, draw, venueOption }) {
+  let showVenue = false, blob = null, url = null;
+  const shareOk = typeof shareFile === "function";
+  const foot = `<span class="grow"></span><button class="btn ghost" data-close>Close</button>${S.downloads ? `<button class="btn${shareOk ? "" : " primary"}" data-cc="save" disabled>${I.dl} Save</button>` : ""}${shareOk ? `<button class="btn primary" data-cc="share" disabled>Share</button>` : ""}`;
+  const body = `<div class="cc-prev"><div class="empty"><span class="spin"></span><p>Making your card…</p></div></div>
+    ${venueOption ? `<label class="cc-switch"><input type="checkbox" role="switch" data-cc="venue"><span><b>Show venue on card</b><span class="hint">Off to keep your swims private, so the venue and peg stay off the card. The card never includes the location saved in your photos, whichever you choose.</span></span></label>` : ""}
+    <p class="hint" style="margin:0">${shareOk ? "Share sends it to WhatsApp, Facebook, Instagram or a text. Save puts it in your Downloads." : S.downloads ? "Save it to your phone, then share it wherever you like." : "Press and hold the image to save it."}</p>`;
+  const entry = openSheet({ title, body, foot });
+  const prev = $(".cc-prev", entry.el);
+  const btns = () => entry.el.querySelectorAll('[data-cc="save"],[data-cc="share"]');
+  const go = () => {
+    btns().forEach(b => b.disabled = true);
+    draw({ showVenue }).then(b => {
+      blob = b; if (url) URL.revokeObjectURL(url); url = URL.createObjectURL(b);
+      prev.innerHTML = `<img class="cardprev" src="${url}" alt="${esc(title)}">`; btns().forEach(x => x.disabled = false);
+    }).catch(() => { prev.innerHTML = `<div class="empty"><h3>Couldn't make the card</h3><p>Something didn't load. Check your signal and try again.</p></div>`; });
+  };
+  go();
+  entry.el.addEventListener("change", e => { if (e.target.matches('[data-cc="venue"]')) { showVenue = e.target.checked; go(); } });
+  entry.el.addEventListener("click", async e => {
+    const b = e.target.closest('[data-cc="save"],[data-cc="share"]'); if (!b || !blob) return;
+    const msg = text + (appLink() ? "\nLogged with Waggler: " + appLink() : "");
+    if (b.dataset.cc === "share") {
+      try { if (!(await shareFile(file, blob, msg))) { await S.downloads.save({ filename: file, data: blob }); toast("Sharing isn't available, so the image was saved instead"); } }
+      catch (er) { if (er && er.name !== "AbortError") toast("Couldn't share the image."); }
+    } else {
+      try { const r = await S.downloads.save({ filename: file, data: blob }); if (r.status === "saved") toast("Image saved"); }
+      catch (er) { if (er.code !== "declined") toast(er.code === "rate_limited" ? "One moment, a save is already open." : "Saving isn't available here. Press and hold the image instead."); }
+    }
   });
+}
+function openShareFor(kind, arg) {
+  const day = nowLocal().slice(0, 10);
+  if (kind === "species") { const st = checklistState(); openShareCard({ title: "Species card", file: `waggler-species-${day}.jpg`, text: `${st.done.length} of ${st.all.length} species caught`, draw: () => drawSpeciesCard() }); }
+  else if (kind === "pbs") openShareCard({ title: "Personal bests card", file: `waggler-pbs-${day}.jpg`, text: "My personal bests", draw: () => drawPbsCard() });
+  else if (kind === "pb") { const c = pbMap()[arg]; if (!c) return; openShareCard({ title: "PB card", file: `${arg.replace(/[^A-Za-z0-9]+/g, "-").toLowerCase()}-pb.jpg`, text: `My ${arg.toLowerCase()} PB: ${fmtWeight(c.weightOz)}`, draw: o => drawPbCard(c, o), venueOption: true }); }
+  else if (kind === "session") { const s = sessionById(arg); if (!s) return; const st = sessionStats(s); openShareCard({ title: "Session card", file: `waggler-session-${s.date}.jpg`, text: `${st.n} fish${st.total ? ", " + fmtWeight(st.total) : ""} on ${fmtDate(s.date)}`, draw: o => drawSessionCard(s, o), venueOption: true }); }
 }
 
 /* ------------------------------------------------------------- sessions */
@@ -1372,7 +1522,7 @@ function sessionDetailHtml(s) {
       ${f("Method", esc(s.method))}${f("Bait & feed", esc(s.bait))}
       ${f("What worked, next time", esc(s.notes), true)}
     </dl>
-    <div class="actions"><button class="btn" data-act="edit-session">${I.edit} Edit session</button><button class="btn primary" data-act="add-to-session">${I.plus} Log a catch here</button></div>
+    <div class="actions"><button class="btn" data-act="edit-session">${I.edit} Edit session</button>${st.n ? `<button class="btn" data-share="session" data-arg="${esc(s.id)}">${I.image} Share session</button>` : ""}<button class="btn primary" data-act="add-to-session">${I.plus} Log a catch here</button></div>
     <div class="section-h"><h2>Catches</h2></div>
     ${st.cs.length ? `<div class="list">${st.cs.sort((a, b) => (a.when || "").localeCompare(b.when || "")).map(c => catchCard(c, pbs)).join("")}</div>` : `<p class="muted" style="margin:0">Nothing logged for this session yet.</p>`}`;
 }
@@ -1495,6 +1645,7 @@ function speciesHtml(sp) {
   return `${src ? `<figure class="refhero"><img src="${esc(src)}" alt="A ${esc(sp.toLowerCase())}"></figure>` : `<div class="hero"><div class="ph-empty">${I.fishbig}</div></div>`}
     <div class="big-title"><h3>${esc(sp)}</h3><span class="num">${cs.length} caught</span></div>
     ${idHtml(sp)}
+    ${pb ? `<div class="actions"><button class="btn" data-share="pb" data-arg="${esc(sp)}">${I.image} Make PB card</button></div>` : ""}
     ${cs.length ? `<dl class="facts" style="margin:0">${f("Personal best", pb ? `<span class="num">${esc(fmtWeight(pb.weightOz))}</span>` : "")}${f("Last caught", esc(fmtDate([...cs].sort((a, b) => (b.when || "").localeCompare(a.when || ""))[0].when)))}${f("Best baits", esc(baits))}${f("Where", esc(vens))}</dl>
       <div class="list">${cs.slice(0, 10).map(c => catchCard(c, pbMap())).join("")}</div>` : `<p class="muted" style="margin:0">You haven't logged ${sp === "Unknown" ? "an unknown fish" : "a " + esc(sp.toLowerCase())} yet.</p>`}`;
 }
@@ -1521,6 +1672,7 @@ function checklistHtml() {
   }).join("");
   const other = st.others.length ? `<section class="cl-group"><div class="section-h"><h2>Other species</h2><span class="num muted">${st.others.length}</span></div><div class="cl-list">${st.others.map(row).join("")}</div></section>` : "";
   return `<div class="cl-head"><b class="num">${st.done.length}<span> / ${st.all.length}</span></b><span>species caught</span><div class="meter"><i style="width:${Math.round(st.done.length / st.all.length * 100)}%"></i></div></div>
+    <button class="btn small" data-share="species" style="align-self:flex-start">${I.image} Share my species count</button>
     <p class="hint" style="margin:0">Species you log are ticked for you. Tick any others you've caught before you started using Waggler.</p>
     <div class="chips" role="group" aria-label="Show"><button class="chip" data-clf="all" aria-pressed="${clFilter === "all"}">All</button><button class="chip" data-clf="todo" aria-pressed="${clFilter === "todo"}">Still to catch</button><button class="chip" data-clf="done" aria-pressed="${clFilter === "done"}">Caught</button></div>
     <div class="cl-body" data-show="${clFilter}">${groups}${other}</div>`;
@@ -1608,6 +1760,7 @@ document.addEventListener("click", e => {
   const oc = t.closest("[data-open-catch]"); if (oc) { e.preventDefault(); openCatch(oc.dataset.openCatch); return; }
   const os = t.closest("[data-open-session]"); if (os) { e.preventDefault(); openSession(os.dataset.openSession); return; }
   const ov = t.closest("[data-open-venue]"); if (ov) { e.preventDefault(); openVenue(ov.dataset.openVenue); return; }
+  const shr = t.closest("[data-share]"); if (shr) { e.preventDefault(); openShareFor(shr.dataset.share, shr.dataset.arg); return; }
   const ids = t.closest("[data-idsp]"); if (ids) { e.preventDefault(); e.stopPropagation(); openSpeciesId(ids.dataset.idsp); return; }
   const gd = t.closest("[data-guide]"); if (gd) { openSpecies(gd.dataset.guide); return; }
   const fl = t.closest("[data-filter]"); if (fl) { S.filter = fl.dataset.filter || null; render(); return; }
