@@ -88,15 +88,19 @@ main{display:flex;flex-direction:column;gap:18px;padding-block:6px 20px}
 .muted{color:var(--muted)}
 .num{font-family:var(--f-data);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 
+.pbl{display:flex;flex-direction:column}
+.pbrow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border:0;border-top:1px solid var(--line);background:none;color:inherit;font:inherit;text-align:left;width:100%;cursor:pointer}
+.pbrow:first-child{border-top:0}.pbn{min-width:0}.pbn b{display:block}.pbn span{display:block;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pbrow .num{flex:none;font-weight:600}
 .banner{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:12px 14px;border-radius:var(--r);background:var(--water-soft);color:var(--ink);font-size:14px}
 .banner.warn{background:color-mix(in srgb,var(--warn) 16%,var(--surface))}
 .banner.bad{background:color-mix(in srgb,var(--bad) 14%,var(--surface))}
 .banner p{margin:0;min-width:0;flex:1 1 220px}
 
-.season{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border-radius:var(--r);overflow:hidden;border:1px solid var(--line)}
+.season{display:grid;grid-template-columns:.8fr .8fr 1.4fr;gap:1px;background:var(--line);border-radius:var(--r);overflow:hidden;border:1px solid var(--line)}
 .season div{background:var(--surface);padding:12px 12px 10px;min-width:0}
 .season b{display:block;font:600 17px/1.2 var(--f-data);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.season span{font-size:12px;color:var(--muted)}
+.season span{display:block;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;margin-inline:-2px;padding-inline:2px}
 .chips::-webkit-scrollbar{display:none}
@@ -313,6 +317,7 @@ fieldset{min-width:0}
 .cl-txt span{font-size:12.5px;color:var(--muted)}
 .cl-row.on .cl-txt span{color:var(--good)}
 .cl-body[data-show="todo"] .cl-row.on,.cl-body[data-show="done"] .cl-row:not(.on){display:none}
+.banner.slim{flex-wrap:nowrap;padding:8px 10px 8px 14px}.banner.slim p{flex:1 1 auto}
 .wxrow{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
 .wxrow .hint a{color:inherit}
 #f-gps{align-self:flex-start}
@@ -842,7 +847,7 @@ function topBanners() {
   }
   h += iosBanner();
   h += closeSeasonBanner();
-  if (S.catches.length && (!S.settings.lastBackup || (Date.now() - parseLocal(S.settings.lastBackup)) / 864e5 > 30)) h += `<div class="banner warn"><p>${S.settings.lastBackup ? "It's over a month since your last backup." : "Your catches are only on this phone."} Back up so you don't lose them.</p><button class="btn small" data-act="backup">Back up now</button></div>`;
+  if (S.view === "catches" && S.catches.length && (!S.settings.lastBackup || (Date.now() - parseLocal(S.settings.lastBackup)) / 864e5 > 30)) h += `<div class="banner warn slim"><p>${S.settings.lastBackup ? "No backup for over a month." : "Not backed up yet."}</p><button class="btn small" data-act="backup">Back up</button></div>`;
   if (hasExamples()) h += `<div class="banner"><p>The entries marked <b>Example</b> show how the log fills up. Remove them when you're ready to start.</p><button class="btn small" data-act="clear-examples">Remove examples</button></div>`;
   return h;
 }
@@ -943,8 +948,7 @@ function viewRecords() {
   const pbs = Object.values(pbMap()).sort((a, b) => b.weightOz - a.weightOz);
   h += `<div class="panel"><div class="section-h" style="margin-bottom:10px"><h3 style="margin:0">Personal bests</h3>${pbs.length ? `<button class="btn small" data-share="pbs">${I.image} Share</button>` : ""}</div>`;
   if (!pbs.length) h += `<p class="muted" style="margin:0">Your heaviest fish of each species appear here once you log weights.</p>`;
-  else h += `<div class="scrollx"><table class="table"><thead><tr><th>Species</th><th class="r">Weight</th><th>Venue</th><th class="r">Date</th></tr></thead><tbody>` +
-    pbs.map(c => `<tr data-open-catch="${esc(c.id)}" data-open><td><b>${esc(c.species)}</b></td><td class="r num">${esc(fmtWeight(c.weightOz))}</td><td>${esc(venueName(c))}</td><td class="r">${esc(fmtShort(c.when))} ${(c.when || "").slice(2,4) ? "’" + (c.when || "").slice(2,4) : ""}</td></tr>`).join("") + `</tbody></table></div>`;
+  else h += `<div class="pbl">` + pbs.map(c => `<button class="pbrow" data-open-catch="${esc(c.id)}"><span class="pbn"><b>${esc(c.species)}</b><span>${esc([venueName(c) !== "No venue" ? venueName(c) : "", fmtDate((c.when || "").slice(0, 10))].filter(Boolean).join(" · "))}</span></span><span class="num">${esc(fmtWeight(c.weightOz))}</span></button>`).join("") + `</div>`;
   h += `</div>`;
 
   h += milestonesPanel();
@@ -1962,8 +1966,8 @@ function welcomeHtml() {
     <ol class="wsteps">${steps.map(([done, t, d, btn], i) => `<li class="${done ? "done" : ""}"><span class="wnum">${done ? "✓" : i + 1}</span><div><b>${t}</b><span class="hint">${d}</span>${done ? "" : `<div style="margin-top:6px">${btn}</div>`}</div></li>`).join("")}</ol>
     <button class="btn primary" data-act="quick-log">${I.plus} Log your first catch</button>
     ${IS_APP && typeof makeBackup === "function" ? `<p class="hint" style="margin:0">New phone? <button class="linkbtn" data-act="go-restore">Restore from a backup</button></p>` : ""}
-    ${EARLY_ACCESS ? `<p class="hint" style="margin:0">${esc(EA_TEXT)}</p>` : ""}
-    <p class="hint" style="margin:0">${esc(privacyText())}</p></div>`;
+    ${EARLY_ACCESS ? `<p class="hint" style="margin:0">Early access: Waggler is free. Start using it on or before 31 January 2027 to become a founding angler.</p>` : ""}
+    <p class="hint" style="margin:0">${IS_APP ? "Your catches stay on this phone." : "Only you can see your log."} Full details are under More.</p></div>`;
 }
 
 /* ------------------------------------------------------------- sessions */
