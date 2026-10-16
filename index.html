@@ -240,6 +240,15 @@ fieldset{min-width:0}
 .tarepick{display:flex;flex-direction:column;gap:6px}
 .tchip{cursor:pointer}.tchip input{width:18px;height:18px;margin:0;accent-color:var(--accent)}
 .tchip:has(input:checked){background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.welcome{display:flex;flex-direction:column;gap:12px}
+.welcome h2{margin:0;font:700 24px/1.1 var(--f-display);letter-spacing:-.02em}
+.wsteps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.wsteps li{display:flex;gap:12px;align-items:flex-start}
+.wsteps li>div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.wnum{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:700;background:var(--sunk);color:var(--ink)}
+.wsteps li.done .wnum{background:var(--good);color:#fff}
+.wsteps li.done b{color:var(--muted)}
+.sub-h{margin:14px 0 4px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .share-months{margin-top:12px;display:flex;flex-direction:column;gap:6px}
 .cc-switch{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);cursor:pointer}
 .cc-switch input{width:24px;height:24px;flex:none;margin:2px 0 0;accent-color:var(--accent)}
@@ -376,7 +385,7 @@ function idHtml(sp) {
   const x = SPECIES_INFO[sp]; if (!x) return "";
   return `<div class="idbox"><p>${esc(x.d)}</p><h4>${sp === "Unknown" ? "Common hybrids" : "How to tell"}</h4><ul>${x.f.map(t => `<li>${esc(t)}</li>`).join("")}</ul></div>`;
 }
-const spPhoto = sp => PHOTOS[sp] ? "fish/" + PHOTOS[sp].file + "?v=1.5.0" : null;
+const spPhoto = sp => PHOTOS[sp] ? "fish/" + PHOTOS[sp].file + "?v=1.6.0" : null;
 function creditLine(sp) {
   return PHOTOS[sp] ? "Drawing made for Waggler" : "";
 }
@@ -766,6 +775,7 @@ function topBanners() {
     if (days < 0) h += `<div class="banner bad"><p><b>${esc(l.name)}</b> expired on ${fmtDate(l.expires)}.</p><button class="btn small" data-act="licences">Update</button></div>`;
     else if (days <= 30) h += `<div class="banner warn"><p><b>${esc(l.name)}</b> runs out in ${days} day${days === 1 ? "" : "s"} (${fmtShort(l.expires)}).</p><button class="btn small" data-act="licences">Update</button></div>`;
   }
+  h += iosBanner();
   h += closeSeasonBanner();
   if (S.catches.length && (!S.settings.lastBackup || (Date.now() - parseLocal(S.settings.lastBackup)) / 864e5 > 30)) h += `<div class="banner warn"><p>${S.settings.lastBackup ? "It's over a month since your last backup." : "Your catches are only on this phone."} Back up so you don't lose them.</p><button class="btn small" data-act="backup">Back up now</button></div>`;
   if (hasExamples()) h += `<div class="banner"><p>The entries marked <b>Example</b> show how the log fills up. Remove them when you're ready to start.</p><button class="btn small" data-act="clear-examples">Remove examples</button></div>`;
@@ -797,7 +807,7 @@ function viewCatches() {
   const yrSessions = S.sessions.filter(s => (s.date || "").startsWith(String(year)));
   const best = thisYear.reduce((a, c) => (c.weightOz || 0) > (a?.weightOz || 0) ? c : a, null);
   if (!S.catches.length) {
-    return h + `<div class="empty">${I.fishbig}<h3>No catches yet</h3><p>Take a photo of your fish, pick the species, add the weight. Waggler fills in the rest where it can.</p><button class="btn primary" data-act="new-catch">${I.plus} Log your first catch</button></div>`;
+    return h + welcomeHtml();
   }
   h += `<div class="season" aria-label="${year} so far"><div><b>${thisYear.length}</b><span>Fish in ${year}</span></div><div><b>${yrSessions.length}</b><span>Sessions</span></div><div><b>${best ? esc(fmtWeight(best.weightOz)) || "–" : "–"}</b><span>${best ? "Best: " + esc(best.species) : "Best fish"}</span></div></div>`;
   const species = [...new Set(S.catches.map(c => c.species))].sort();
@@ -914,8 +924,11 @@ function viewMore() {
     <button class="btn small" data-act="export">${I.dl} Export catches (CSV)</button></div></div>`;
   h += `<div class="panel"><h3>Backup</h3><p class="hint" style="margin:0 0 10px">Your log is stored on this phone only. A backup file holds every catch and photo. Keep a copy in Google Drive or email it to yourself.${S.settings.lastBackup ? " Last backup: " + esc(fmtDate(S.settings.lastBackup)) + "." : ""}</p>
     <div class="actions"><button class="btn small primary" data-act="backup">${I.dl} Back up now</button><button class="btn small" data-act="restore">Restore from a backup</button><input type="file" id="restore-file" accept=".json,application/json" class="sr" tabindex="-1" aria-hidden="true"></div>
-    <p class="hint" style="margin:10px 0 0">Waggler ${"1.5.0"} · runs on your phone · ${WX_CREDIT}</p></div>`;
-  h += `<div class="panel"><div class="section-h" style="margin-bottom:6px"><h3 style="margin:0">About</h3><button class="btn small ghost" data-act="credits">Credits</button></div><p class="hint" style="margin:0">Waggler, a fishing log for UK anglers.</p></div>`;
+    <p class="hint" style="margin:10px 0 0">Waggler ${"1.6.0"} · runs on your phone · ${WX_CREDIT}</p></div>`;
+  h += `<div class="panel"><div class="section-h" style="margin-bottom:6px"><h3 style="margin:0">About</h3><button class="btn small ghost" data-act="credits">Credits</button></div>
+    <p class="hint" style="margin:0 0 10px">Waggler, a fishing log for UK anglers.</p>
+    <a class="btn small" href="${esc(feedbackHref())}">Send feedback</a>
+    <h4 class="sub-h">Privacy</h4><p class="hint" style="margin:0">${esc(privacyText())}</p></div>`;
   return h;
 }
 
@@ -1784,6 +1797,38 @@ async function drawMonthCard(ym, o) {
   cardFooter(g); return cardBlob(cv);
 }
 
+
+/* ------------------------------------------------------- sharing readiness */
+const FEEDBACK_EMAIL = "waggler@gmail.com";
+const IS_APP = typeof APP_URL !== "undefined";
+const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const isInstalled = () => { try { return navigator.standalone === true || matchMedia("(display-mode: standalone)").matches; } catch (e) { return false; } };
+function iosBanner() {
+  if (!IS_APP || !isIOS() || isInstalled()) return "";
+  try { if (localStorage.getItem("waggler.iosTip") === "hide") return ""; } catch (e) {}
+  return `<div class="banner"><p><b>On iPhone?</b> Tap the Share button in Safari, then <b>Add to Home Screen</b>. Waggler then opens like an app, works with no signal, and Safari keeps your catches safe.</p><button class="btn small" data-act="hide-ios">Got it</button></div>`;
+}
+function privacyText() {
+  return IS_APP ? "Your catches, photos and venues are stored on this phone only. Waggler doesn't send them to anyone. The only things that leave your phone are a catch's location, sent to Open-Meteo to look up the weather, and requests for the app's fonts."
+    : "Your catches, photos and venues are saved to your Claude account and only you can see them.";
+}
+function feedbackHref() {
+  const body = "What were you doing?\n\nWhat happened?\n\nWhat did you expect?\n\nPhone and browser: " + navigator.userAgent;
+  return `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent("Waggler feedback")}&body=${encodeURIComponent(body)}`;
+}
+function welcomeHtml() {
+  const steps = [
+    [S.venues.some(v => !v.example), "Add the water you fish", "Its location lets Waggler pick the venue and weather for you.", `<button class="btn small" data-act="new-venue">${I.plus} Add venue</button>`],
+    [!!(S.settings.slingOz || S.settings.netOz), "Set your sling or net weight", "Optional. Waggler takes it off every fish you weigh.", `<button class="btn small" data-act="sling">Set weights</button>`],
+    [Object.keys(S.settings.ticked || {}).length > 0, "Tick species you've already caught", "Starts your species list from what you've caught before.", `<button class="btn small" data-act="checklist">Open species</button>`]
+  ];
+  return `<div class="welcome panel"><h2>Welcome to Waggler</h2><p class="muted" style="margin:0">Three quick things, then log your first fish.</p>
+    <ol class="wsteps">${steps.map(([done, t, d, btn], i) => `<li class="${done ? "done" : ""}"><span class="wnum">${done ? "✓" : i + 1}</span><div><b>${t}</b><span class="hint">${d}</span>${done ? "" : `<div style="margin-top:6px">${btn}</div>`}</div></li>`).join("")}</ol>
+    <button class="btn primary" data-act="quick-log">${I.plus} Log your first catch</button>
+    ${IS_APP && typeof makeBackup === "function" ? `<p class="hint" style="margin:0">New phone? <button class="linkbtn" data-act="go-restore">Restore from a backup</button></p>` : ""}
+    <p class="hint" style="margin:0">${esc(privacyText())}</p></div>`;
+}
+
 /* ------------------------------------------------------------- sessions */
 function sessionDetailHtml(s) {
   const st = sessionStats(s); const d = parseLocal(s.date); const v = venueById(s.venueId);
@@ -2061,6 +2106,8 @@ document.addEventListener("click", e => {
   const act = a.dataset.act;
   if (act === "new-catch") openCatchForm(null);
   else if (act === "quick-log") openCatchForm(null, { quick: true });
+  else if (act === "hide-ios") { try { localStorage.setItem("waggler.iosTip", "hide"); } catch (er) {} render(); }
+  else if (act === "go-restore") { S.view = "more"; render(); setTimeout(() => { const r = document.querySelector('[data-act="restore"]'); if (r) { r.scrollIntoView({ block: "center" }); r.focus(); } }, 50); }
   else if (act === "sling") openSling();
   else if (act === "insights") openInsights();
   else if (act === "new-session") openSessionForm(null);
