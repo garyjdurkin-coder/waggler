@@ -2361,6 +2361,7 @@ backupWatch();
 // count this phone once as a new angler: loads new.html in a hidden frame, which Cloudflare counts as one page view
 function countNewAngler() {
   if (S.settings.countedNew || !navigator.onLine) return;
+  if (typeof IN_APP !== "undefined" && IN_APP) return;   // Facebook/Instagram browsers keep separate storage, so they'd count the same person twice
   const f = document.createElement("iframe"); f.referrerPolicy = "no-referrer"; f.src = "new.html"; f.title = ""; f.setAttribute("aria-hidden", "true"); f.tabIndex = -1;
   f.style.cssText = "position:absolute;width:1px;height:1px;border:0;left:-9999px";
   document.body.appendChild(f); setTimeout(() => f.remove(), 15000);
