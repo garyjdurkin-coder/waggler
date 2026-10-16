@@ -399,7 +399,7 @@ function idHtml(sp) {
   const x = SPECIES_INFO[sp]; if (!x) return "";
   return `<div class="idbox"><p>${esc(x.d)}</p><h4>${sp === "Unknown" ? "Common hybrids" : "How to tell"}</h4><ul>${x.f.map(t => `<li>${esc(t)}</li>`).join("")}</ul></div>`;
 }
-const spPhoto = sp => PHOTOS[sp] ? "fish/" + PHOTOS[sp].file + "?v=1.8.0" : null;
+const spPhoto = sp => PHOTOS[sp] ? "fish/" + PHOTOS[sp].file + "?v=1.9.0" : null;
 function creditLine(sp) {
   return PHOTOS[sp] ? "Drawing made for Waggler" : "";
 }
@@ -940,7 +940,8 @@ function viewMore() {
     <button class="btn small" data-act="export">${I.dl} Export catches (CSV)</button></div></div>`;
   h += `<div class="panel"><h3>Backup</h3><p class="hint" style="margin:0 0 10px">Your log is stored on this phone only. A backup file holds every catch and photo. Keep a copy in Google Drive or email it to yourself.${S.settings.lastBackup ? " Last backup: " + esc(fmtDate(S.settings.lastBackup)) + "." : ""}</p>
     <div class="actions"><button class="btn small primary" data-act="backup">${I.dl} Back up now</button><button class="btn small" data-act="restore">Restore from a backup</button><input type="file" id="restore-file" accept=".json,application/json" class="sr" tabindex="-1" aria-hidden="true"></div>
-    <p class="hint" style="margin:10px 0 0">Waggler ${"1.8.0"} · runs on your phone · ${WX_CREDIT}</p></div>`;
+    <label class="toggle" style="margin-top:12px"><input type="checkbox" id="ask-backup" ${S.settings.askBackup === false ? "" : "checked"}> Ask to back up after each session</label>
+    <p class="hint" style="margin:10px 0 0">Waggler ${"1.9.0"} · runs on your phone · ${WX_CREDIT}</p></div>`;
   h += `<div class="panel"><div class="section-h" style="margin-bottom:6px"><h3 style="margin:0">About</h3><button class="btn small ghost" data-act="credits">Credits</button></div>
     <p class="hint" style="margin:0 0 10px">Waggler, a fishing log for UK anglers.</p>
     ${EARLY_ACCESS ? `<h4 class="sub-h">Early access</h4><p class="hint" style="margin:0 0 10px">${esc(EA_TEXT)}${S.settings.firstUsed ? ` You started using Waggler on ${esc(fmtDate(S.settings.firstUsed))}, so you're a founding angler.` : ""}</p>`
@@ -1989,6 +1990,7 @@ function openSessionForm(existing) {
         const ref = existing ? col("sessions").doc(existing.id) : col("sessions").doc(uid());
         await write(() => ref.set(doc));
         closeSheet(entry); toast(existing ? "Session updated" : "Session started");
+        if (doc.end && typeof maybeAskBackup === "function") setTimeout(maybeAskBackup, 700);
       } catch (er) { toast(dbErr(er)); btn.disabled = false; }
     });
   }});
@@ -2199,12 +2201,35 @@ async function doBackup(btn) {
   try {
     const text = await makeBackup();
     await S.downloads.save({ filename: `waggler-backup-${nowLocal().slice(0, 10)}.json`, data: text });
-    await saveSettings({ lastBackup: nowLocal().slice(0, 10) });
+    await saveSettings({ lastBackup: nowLocal().slice(0, 10), lastBackupAt: new Date().toISOString() });
     toast("Backup saved to Downloads");
   } catch (e) { toast("The backup didn't save. Try again."); }
   finally { if (btn) btn.disabled = false; }
 }
+// after a session is over, offer to back it up (once per session)
+function sessionToBackUp() {
+  const since = S.settings.lastBackupAt || (S.settings.lastBackup ? S.settings.lastBackup + "T23:59:59" : "");
+  const fresh = S.catches.filter(c => !c.example && c.sessionId && ((c.updatedAt || c.createdAt || "") > since));
+  const now = nowLocal(), today = now.slice(0, 10), hm = now.slice(11, 16);
+  const done = [...new Set(fresh.map(c => c.sessionId))].map(id => sessionById(id)).filter(x => x && (x.date < today || (x.date === today && x.end && x.end <= hm)));
+  return done.sort((a, b) => (b.date + (b.end || "")).localeCompare(a.date + (a.end || "")))[0] || null;
+}
+async function maybeAskBackup() {
+  if (!S.settingsLoaded || !S.loaded.catches || !S.loaded.sessions || S.settings.askBackup === false) return;
+  if (S.stack && S.stack.length) return;          // never interrupt something they're doing
+  const ses = sessionToBackUp(); if (!ses || S.settings.backupAskedFor === ses.id) return;
+  await saveSettings({ backupAskedFor: ses.id });
+  const n = S.catches.filter(c => c.sessionId === ses.id).length, v = ses.venueId ? venueById(ses.venueId)?.name : null;
+  const entry = openSheet({ title: "Back up your session", body: `<p style="margin:0">You logged ${n} fish${v ? ` at <b>${esc(v)}</b>` : ""} on ${esc(fmtDate(ses.date))}. Save a backup to this phone so your catches are safe.</p>
+      <p class="hint" style="margin:0">The backup file goes in your Downloads, with every catch and photo. You can move it to Google Drive or email it to yourself for extra safety. You can turn these reminders off in More.</p>`,
+    foot: `<span class="grow"></span><button class="btn ghost" data-close>Not now</button><button class="btn primary" id="ab-go">${I.dl} Save backup</button>`,
+    onMount(el) { $("#ab-go", el).onclick = async () => { await doBackup($("#ab-go", el)); closeSheet(entry); }; } });
+}
+function backupWatch() { let tries = 0; const t = setInterval(() => { tries++; if (S.settingsLoaded && S.loaded.catches && S.loaded.sessions) { clearInterval(t); setTimeout(maybeAskBackup, 1200); } else if (tries > 40) clearInterval(t); }, 250); }
+backupWatch();
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") setTimeout(maybeAskBackup, 800); });
 document.addEventListener("change", async e => {
+  if (e.target.id === "ask-backup") { saveSettings({ askBackup: e.target.checked }); return; }
   if (e.target.id !== "restore-file" || !e.target.files[0]) return;
   const file = e.target.files[0];
   let text; try { text = await file.text(); const j = JSON.parse(text); if (j.app !== "waggler" && j.app !== "bankside") throw 0; } catch (er) { toast("That file isn't a Waggler backup."); return; }
