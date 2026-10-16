@@ -251,6 +251,7 @@ fieldset{min-width:0}
 .sub-h{margin:14px 0 4px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .h1row{display:flex;align-items:center;gap:10px}
 .ea-tag{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--water-soft);color:var(--water);white-space:nowrap}
+.suspect{font-weight:500;color:var(--muted);font-size:.85em}
 .share-months{margin-top:12px;display:flex;flex-direction:column;gap:6px}
 .cc-switch{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);cursor:pointer}
 .cc-switch input{width:24px;height:24px;flex:none;margin:2px 0 0;accent-color:var(--accent)}
@@ -791,7 +792,7 @@ function catchCard(c, pbs) {
   return `<button class="card" data-open-catch="${esc(c.id)}">
     <div class="thumb">${ph ? `<img src="${esc(photoUrl(ph))}" alt="" loading="lazy">` : spPhoto(c.species) ? `<img class="ref" src="${esc(spPhoto(c.species))}" alt="" loading="lazy">` : I.fish}</div>
     <div class="card-body">
-      <div class="card-title"><strong>${esc(c.species)}</strong><span class="num">${esc(fmtWeight(c.weightOz))}</span></div>
+      <div class="card-title"><strong>${esc(c.species)}${c.suspect ? `<span class="suspect"> · maybe ${esc(c.suspect.toLowerCase())}</span>` : ""}</strong><span class="num">${esc(fmtWeight(c.weightOz))}</span></div>
       <div class="meta">${esc(venueName(c))}${c.peg ? " · peg " + esc(c.peg) : ""}</div>
       <div class="meta">${esc(fmtDate(c.when))}${fmtTime(c.when) ? " · " + fmtTime(c.when) : ""}${c.bait ? " · " + esc(c.bait) : ""}</div>
       <div class="badges">${isPb ? '<span class="badge pb">PB</span>' : ""}${c.example ? '<span class="badge ex">Example</span>' : ""}${c.released === false ? '<span class="badge">Retained</span>' : ""}</div>
@@ -1046,6 +1047,8 @@ function openCatchForm(existing, opts = {}) {
         <select id="f-species"><option value="">Choose a species</option>${Object.entries(SPECIES).map(([g, l]) => `<optgroup label="${g}">${l.map(s => `<option ${c.species === s ? "selected" : ""}>${s}</option>`).join("")}</optgroup>`).join("")}<option value="__other" ${isOther ? "selected" : ""}>Other species…</option></select>
       </div>
       <div class="spref" id="f-spref" hidden></div>
+      <div class="field" id="f-suspect-w" ${c.species === "Unknown" ? "" : "hidden"}><label for="f-suspect">What do you think it is?</label><input id="f-suspect" type="text" list="f-suspect-list" value="${esc(c.suspect || "")}" placeholder="e.g. Roach x bream" autocomplete="off">
+        <datalist id="f-suspect-list">${["Roach x bream", "Rudd x bream", "Roach x rudd", "Carp x crucian", "Bream x silver bream", ...CHECK_SPECIES].map(x => `<option value="${esc(x)}"></option>`).join("")}</datalist><span class="hint">Optional. Your best guess, so you can come back to it later.</span></div>
       <div class="field" id="f-other-w" ${isOther ? "" : "hidden"}><label for="f-other">Species name</label><input id="f-other" type="text" value="${isOther ? esc(c.species) : ""}" autocomplete="off"></div>
       <div id="f-id-w" hidden><button type="button" class="btn small" id="f-id">${I.spark} Suggest species from photo</button><div class="idline" id="f-id-out" hidden style="margin-top:8px"></div></div>
       ${kg ? `<div class="grid2 weight-big"><div class="field"><label for="f-kg">Weight</label><div class="unit"><input id="f-kg" type="text" inputmode="decimal" value="${c.weightOz ? (c.weightOz * 0.028349523).toFixed(2) : ""}"><span>kg</span></div></div>
@@ -1183,10 +1186,10 @@ function openCatchForm(existing, opts = {}) {
       box.hidden = !src;
       if (src) box.innerHTML = `<button type="button" class="idbtn" data-idsp="${esc(sp)}" aria-label="ID tips for ${esc(sp.toLowerCase())}"><img src="${esc(src)}" alt="A ${esc(sp.toLowerCase())}"></button><div><b>${esc(sp)}</b><span class="hint">Tap the drawing for ID tips</span></div>`;
     };
-    speciesSel.addEventListener("change", () => { $("#f-other-w", el).hidden = speciesSel.value !== "__other"; drawRef(); });
+    speciesSel.addEventListener("change", () => { $("#f-other-w", el).hidden = speciesSel.value !== "__other"; $("#f-suspect-w", el).hidden = speciesSel.value !== "Unknown"; drawRef(); });
     drawRef(); csCheck();
     el.addEventListener("click", e => {
-      const sp = e.target.closest("[data-sp]"); if (sp) { speciesSel.value = sp.dataset.sp; $("#f-other-w", el).hidden = true; drawRef(); }
+      const sp = e.target.closest("[data-sp]"); if (sp) { speciesSel.value = sp.dataset.sp; $("#f-other-w", el).hidden = true; $("#f-suspect-w", el).hidden = sp.dataset.sp !== "Unknown"; drawRef(); }
       const bt = e.target.closest("[data-bait]"); if (bt) { const inp = $("#f-bait", el); const cur = inp.value.trim(); inp.value = cur ? (cur.toLowerCase().includes(bt.dataset.bait.toLowerCase()) ? cur : cur + ", " + bt.dataset.bait.toLowerCase()) : bt.dataset.bait; }
       const rm = e.target.closest("[data-rm]"); if (rm) { const p = F.photos.splice(+rm.dataset.rm, 1)[0]; if (p && p.removedId === undefined && p.id) (F.removed ||= []).push(p.id); drawPhotos(); }
     });
@@ -1297,7 +1300,7 @@ function openCatchForm(existing, opts = {}) {
           await write(() => col("sessions").doc(s.id).update({ cond, updatedAt: new Date().toISOString() }));
         }
         const doc = {
-          species, weightOz, tareOz: tareOz ?? existing?.tareOz ?? null, tareWhat: tareWhat ?? existing?.tareWhat ?? null, lengthCm: num($("#f-len", el).value), released: $("#f-released", el).checked, when,
+          species, suspect: species === "Unknown" ? ($("#f-suspect", el).value.trim() || null) : null, weightOz, tareOz: tareOz ?? existing?.tareOz ?? null, tareWhat: tareWhat ?? existing?.tareWhat ?? null, lengthCm: num($("#f-len", el).value), released: $("#f-released", el).checked, when,
           venueId, venueName: vName, sessionId: s.id, peg: peg || null,
           method: $("#f-method", el).value || null, bait: $("#f-bait", el).value.trim() || null, rig: $("#f-rig", el).value.trim() || null,
           cond, notes: $("#f-notes", el).value.trim() || null, photos: ids,
@@ -1337,6 +1340,7 @@ function catchDetailHtml(c) {
     <div class="big-title"><h3>${esc(c.species)}</h3><span class="num">${esc(fmtWeight(c.weightOz)) || "Not weighed"}</span></div>
     <div class="badges" style="margin-top:-10px">${isPb ? '<span class="badge pb">Personal best</span>' : ""}${c.example ? '<span class="badge ex">Example</span>' : ""}${c.released === false ? '<span class="badge">Retained</span>' : '<span class="badge">Returned</span>'}</div>
     <dl class="facts" style="margin:0">
+      ${f("Your guess", esc(c.suspect || ""), true)}
       ${f("Caught", esc(fmtDate(c.when)) + (fmtTime(c.when) ? " · " + fmtTime(c.when) : ""), true)}
       ${f("Venue", c.venueId ? `<a href="#" data-open-venue="${esc(c.venueId)}" style="color:inherit">${esc(venueName(c))}</a>` : esc(venueName(c)))}
       ${f("Peg / swim", esc(c.peg))}
@@ -1400,7 +1404,7 @@ async function drawCatchCard(c, o = {}) {
   // text block from the bottom up
   let y = H - 78;
   g.fillStyle = "rgba(255,255,255,.78)"; g.font = '500 34px "Figtree", system-ui, sans-serif';
-  const line3 = [c.method, c.bait].filter(Boolean).join(" · ");
+  const line3 = [c.suspect ? "Maybe " + c.suspect.toLowerCase() : "", c.method, c.bait].filter(Boolean).join(" · ");
   const line2 = [o.showVenue && venueName(c) !== "No venue" ? venueName(c) : "", o.showVenue && c.peg ? "Peg " + c.peg : "", fmtDate(c.when)].filter(Boolean).join("  ·  ");
   if (line3) { g.fillText(fit(g, line3, W - 2 * X), X, y); y -= 52; }
   g.fillStyle = "rgba(255,255,255,.92)"; g.fillText(fit(g, line2, W - 2 * X), X, y); y -= 70;
